@@ -1,0 +1,3 @@
+[submodule "waf_au_extensions"]
+	path = waf_au_extensions
+	url = git@github.com:AgileCloudLab/waf_au_extensions.git
