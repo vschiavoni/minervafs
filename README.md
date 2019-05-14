@@ -13,6 +13,11 @@ We build both a shared and static version of this library, just build using the 
 python waf configure build 
 ```
 
+after first configuration 
+
+```bash 
+python waf build 
+```
 
 ## Configuration 
 
