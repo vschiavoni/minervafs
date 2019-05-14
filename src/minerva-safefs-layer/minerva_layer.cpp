@@ -81,9 +81,46 @@ static int minerva_write(const char* path, const char *buf, size_t size, off_t o
                          struct fuse_file_info* fi);
 
 // Make items
-static int minerva_mknod(const char *path, mode_t mode, dev_t rdev);
+static int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+    int res;
 
-static int minerva_mkdir(const char *path, mode_t mode);
+    std::string persistent_entry_path = get_minerva_path(path);
+
+    // Check if the file is in a regular mode
+    if (S_ISREG(mode))
+    {
+        res = open(persistent_entry_path.c_str(), O_CREAT | O_EXCL | O_WRONLY, mode);
+        if (res >= 0)
+        {
+            res = close(res);
+        }
+    }
+    else if (S_ISFIFO(mode))
+    {
+        res = mkfifo(persistent_entry_path.c_str(), mode);
+    }
+    else
+    {
+        res = mknod(persistent_entry_path.c_str(), mode, rdev);
+    }
+    
+    if (res == -1)
+    {
+        return -errno;        
+    }
+    return 0;
+}
+
+static int minerva_mkdir(const char *path, mode_t mode)
+{
+    std::string persistent_folder_path = get_minerva_path(path);
+    if (mkdir(persistent_folder_path.c_str(), mode) == -1)
+    {
+        return -errno;
+    }
+    return 0;
+}
 
 static int minerva_releasedir(const char *path, struct fuse_file_info *fi);
 
