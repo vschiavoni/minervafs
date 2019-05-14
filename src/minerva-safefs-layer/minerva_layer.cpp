@@ -6,60 +6,89 @@
 #include <cstring> 
 #include <string>
 
-#include <vector> 
+#include <vector>
 
-const static std::string minerva_path = ".minerva";
-const static std::string basis_path = ".basis";
-const static std::string registry_path = ".registry";
+#include <filesystem>
 
-std::string get_home_directory()
+#include <iostream> // REMEMBER TO REMOVE 
+
+static int minerva_init(struct fuse_operations** fuse_operations);
+
+// Base operation
+
+static int minerva_getattr(const char* path, struct stat* stbuf);
+
+static int minerva_fgetattr(const char *path, struct stat *stbuf,
+                            struct fuse_file_info *fi);
+
+static int minerva_access(const char* path, int mask);
+
+static int minerva_open(const char* path, struct fuse_file_info* fi);
+
+static int minerva_read(const char *path, char *buf, size_t size, off_t offset,
+                        struct fuse_file_info *fi);
+
+static int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
+                         struct fuse_file_info* fi);
+
+// Make items
+static int minerva_mknod(const char *path, mode_t mode, dev_t rdev);
+
+static int minerva_mkdir(const char *path, mode_t mode);
+
+static int minerva_releasedir(const char *path, struct fuse_file_info *fi);
+
+// Directory operations
+
+static inline struct minerva_dirp *get_dirp(struct fuse_file_info *fi);
+
+static int minerva_opendir(const char *path, struct fuse_file_info *fi);
+
+static int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                           off_t offset, struct fuse_file_info *fi);
+
+// Helper functions
+
+
+
+void setup_paths()
 {
-   char* homedir;
+    const std::string MKDIR = "mkdir";
+    const std::string TOUCH = "touch";
+
+    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder))
+    {
+        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder).c_str());
+    }
+
+    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_basis_folder))
+    {
+        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_basis_folder).c_str());
+    }
+
+    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_registry))
+    {
+        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_registry).c_str());
+    }    
+}
+
+///
+/// @param path const char* is path provide from the fuse file system impl
+/// @return a path correct for the minerva folder 
+/// 
+std::string get_minerva_path(const char* path)
+{
+    std::string internal_path(path);
+    return USER_HOME + minervafs_root_folder + "/" + internal_path.substr(1);
+}
+
+std::string get_user_home()
+{
+    char* homedir;
     if ((homedir = getenv("HOME")) != NULL)
     {
         homedir = getpwuid(getuid())->pw_dir;
-        return std::string(homedir, strlen(homedir));
     }
-    else
-    {
-        return "";
-    }
-}
 
-void exec_command(std::string cmd, std::string input, std::vector<std::string> params)
-{
-    std::string full = cmd + " ";
-    for(const auto& param : params)
-    {
-        full = full + param + " ";
-    }
-    full = full + input;
-    std::system(full.c_str());
-}
-
-void mkdir(std::string path)
-{
-    std::vector<std::string> params;
-    exec_command("mkdir", path, params);
-}
-
-void touch(std::string path)
-{
-    std::vector<std::string> params;
-    exec_command("touch", path, params);    
-}
-
-int minerva_init(struct fuse_operations** fuse_operations)
-{
-
-    std::string homedir = get_home_directory();
-
-    // TODO: Check if exists before setup
-    mkdir((homedir + "/" + minerva_path));
-    mkdir((homedir + "/" + minerva_path + "/" + basis_path));
-    touch((homedir + "/" + minerva_path + "/" + registry_path));
-
-    // TODO:  If exists load inforamtion
-
-    // TODO: SETUP minerva
+    USER_HOME = std::string(homedir, strlen(homedir));
 }
