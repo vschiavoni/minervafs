@@ -3,6 +3,12 @@
 #include <pwd.h>
 #include <unistd.h>
 
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <dirent.h>
+
 #include <cstring> 
 #include <string>
 
@@ -16,7 +22,50 @@ static int minerva_init(struct fuse_operations** fuse_operations);
 
 // Base operation
 
-static int minerva_getattr(const char* path, struct stat* stbuf);
+static int minerva_getattr(const char* path, struct stat* stbuf)
+{
+    int res = 0;
+
+    std::string minerva_entry_path = get_minerva_path(path);
+    memset(stbuf, 0, sizeof(struct stat));
+
+    stbuf->st_uid = getuid();
+    stbuf->st_gid = getgid();
+
+    // If the entry actually exists we have to "fake" m_time
+    if (std::filesystem::exists(minerva_entry_path))
+    {
+        stbuf->st_mtime = get_mtime(minerva_entry_path);
+    }
+    else
+    {
+        return -ENOENT;
+    }
+    
+    if (path == "/")
+    {
+        // TODO: Look at st mode
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_nlink = 2;
+    }
+    else if (!std::filesystem::is_directory(minerva_entry_path))
+    {
+        stbuf->st_mode = S_IFREG | 0664;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = std::filesystem::file_size(minerva_entry_path);            
+    }
+    else if (std::filesystem::is_directory(minerva_entry_path))
+    {
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = std::filesystem::file_size(minerva_entry_path); // TODO: Chekc if this is valid   
+    }
+    else
+    {
+        res = -ENOENT;
+    }
+    return res;
+}
 
 static int minerva_fgetattr(const char *path, struct stat *stbuf,
                             struct fuse_file_info *fi);
@@ -91,4 +140,15 @@ std::string get_user_home()
     }
 
     USER_HOME = std::string(homedir, strlen(homedir));
+}
+
+time_t get_mtime(const std::string path)
+{
+    struct stat statbuf;
+    if (stat(path.c_str(), &statbuf) == -1)
+    {
+        perror(path.c_str());
+        exit(1);
+    }
+    return statbuf.st_mtime;
 }

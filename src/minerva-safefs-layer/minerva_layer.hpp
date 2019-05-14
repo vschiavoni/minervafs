@@ -4,7 +4,7 @@
 
 // Filesystem includes
 #include <fuse.h>
-#include <dirent.h>
+
 
 #include <string>
 
@@ -71,3 +71,5 @@ void setup_paths();
 std::string get_minerva_path(const char* path);
 
 std::string get_user_home();
+
+time_t get_mtime(const std::string path);
