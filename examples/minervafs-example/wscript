@@ -1,0 +1,21 @@
+import sys
+
+def build(bld):
+
+    libs = ['cryptopp']
+
+    link_flags = list()
+    
+    if sys.platform == 'linux' or sys.platform == 'linux2':
+        libs.append('stdc++fs')
+
+    if sys.platform == 'darwin':
+        libs.append('c++fs')
+
+        
+    bld(features = 'cxx cxxprogram',
+        target = 'minervafs_example',
+        source = 'minervafs_example.cpp',
+        link_flags = ['-lfuse'],
+        use = ['minerva-safefs-layer-includes', 'minerva-safefs-layer']
+    )

@@ -3,6 +3,7 @@ from waflib.Tools.compiler_cxx import cxx_compiler
 
 # import subprocess
 import os
+import sys
 from waf_au_extensions import utils as au_utility
 
 
@@ -16,19 +17,54 @@ def options(opt) :
 
 def configure(cnf) :
     cnf.load('compiler_cxx')
-    cnf.env.append_value('CXXFLAGS', ['-std=c++17', '-Wall', '-Werror', '-Wextra'])
+
+    link_flags = ['-pthread']
+    cxx_flags = ['-g', '-std=c++17', '-Wall', '-Werror', '-Wextra', '-O3', '-D_FILE_OFFSET_BITS=64']
+    
+    if sys.platform == 'linux' or sys.platform == 'linux2':
+        link_flags.append('-lstdc++fs')
+        link_flags.append('-lfuse')
+
+    if sys.platform == 'darwin':
+        link_flags.append('-L/usr/local/opt/llvm/lib')
+        cxx_flags.append('-stdlib=libc++')
+        link_flags.append('-lfuse')        
+
+    cnf.env.append_value('CXXFLAGS', cxx_flags)        
     cnf.env.append_value('LINKFLAGS',
-                         ['-pthread'])
+                         link_flags)
+
+     
 
 
 def build(bld):
     # REPLACE PROJECT NAME 
-    bld(name = 'minerva-safefs-layer',
+    bld(name = 'minerva-safefs-layer-includes',
         includes='./src',
         export_includes='./src')
+
+    bld.stlib(name = 'minerva-safefs-layer',
+        features = 'cxx cxxstlib',
+        target='minerva-safefs-layer',
+        includes='../src',
+        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
+        use=['minerva-safefs-layer-includes']
+    )
+
+    
+    bld.shlib(name = 'minerva-safefs-layer-shared',                    
+        features = 'cxx',                                              
+        target='minerva-safefs-layer-shared',                                 
+        includes='../src',                                             
+        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'), 
+        link_flags=['-Wl', '--whole-archive'],
+        use=['minerva-safefs-layer-includes']                          
+    )                                                                  
+    
+    
         
     # Build Examples
-    # bld.recurse('examples/EXAMPLE_NAME')
+    bld.recurse('examples/minervafs-example')
 
     # Build Test
     # bld.recurse('test/TEST_NAME')
