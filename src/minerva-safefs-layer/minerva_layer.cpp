@@ -1,5 +1,14 @@
 #include "minerva_layer.hpp"
 
+#include <codewrapper/codewrapper.hpp>
+
+#include <tartarus/model/raw_data.hpp>
+#include <tartarus/model/coded_data.hpp>
+#include <tartarus/model/coded_pair.hpp>
+#include <tartarus/readers.hpp>
+#include <tartarus/writers.hpp>
+
+
 #include <pwd.h>
 #include <unistd.h>
 
@@ -9,20 +18,23 @@
 #include <stdlib.h>
 #include <dirent.h>
 
+#include <cmath>
 #include <cstring> 
 #include <string>
+
 
 #include <vector>
 
 #include <filesystem>
 
-#include <iostream> // REMEMBER TO REMOVE 
+#include <iostream> // REMEMBER TO REMOVE
+
 
 /*static*/ void* minerva_init(struct fuse_conn_info *conn)
 {
     (void) conn;
     USER_HOME = get_user_home();
-    setup_paths();
+    setup();
     return 0;
 }
 
@@ -120,11 +132,32 @@
                         struct fuse_file_info *fi)
 {
     std::string minerva_entry_path = get_minerva_path(path);
+
+    std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
+
+    std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
+
+    if (!std::filesystem::exists(minerva_entry_temp_path))
+    {
+    
+        tartarus::model::coded_data coded_data = minerva_storage.load(filename);
+
+        codes::code_params params = extract_code_params(coded_data.coding_configuration);
+        codewrapper::CodeWrapper coder(params);
+
+        tartarus::model::raw_data data = coder.decode_data(coded_data);
+    
+
+
+        tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
+    }
+    
+    
     int fd;
     int res;
 
     (void) fi;
-    fd = open(minerva_entry_path.c_str(), O_RDONLY);
+    fd = open(minerva_entry_temp_path.c_str(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -149,16 +182,11 @@
 {
     (void) offset; // write the whole thing
 
-    // We convert the buffer to data we can use
-    std::vector<uint8_t> data;
-    data.assign(buf, buf+size); // we passe the data of buff to the data vector
-
-    std::string minerva_entry_path = get_minerva_path(path);
-
     int fd;
     int res;
 
     (void) fi;
+    std::string minerva_entry_path = get_minerva_path(path);    
     fd = open(minerva_entry_path.c_str(), O_WRONLY);
 
     // If we are unable to open a file we return an error
@@ -176,6 +204,52 @@
 
     close(fd);
     return res;
+}
+
+
+/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
+{
+    (void) fi;
+    
+    std::cout << "entered release" << std::endl;
+    std::string minerva_entry_path = get_minerva_path(path);
+
+    if (!std::filesystem::exists(minerva_entry_path))
+    {
+        return -errno;        
+    }
+    
+    if (std::filesystem::is_directory(minerva_entry_path))
+    {
+        return 0;
+    }
+    
+    auto file_size = std::filesystem::file_size(minerva_entry_path);
+    
+    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_path);
+
+    //(static_cast<size_t>(file_size));
+    
+    // minerva_read(path, (char*)data.data(), data.size(), 0, fi);
+
+
+    codes::code_params code_param = get_code_params(file_size);
+    codewrapper::CodeWrapper code(code_param);
+
+    std::string filename = (std::filesystem::path(path)).filename().string();
+    std::string mime_type = "TODO"; // TODO: Change;
+
+    tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
+    tartarus::model::coded_data coded = code.encode_data(raw);
+
+    if (minerva_storage.store(coded))
+    {
+        return 0;
+    }
+    else
+    {
+        return -errno;
+    }
 }
 
 // TODO: update as needed
@@ -300,25 +374,75 @@
 
 
 
-void setup_paths()
+void setup()
 {
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
+
+    std::string config_file_path = USER_HOME + minervafs_root_folder + minervafs_config;
+
+    if ( std::filesystem::exists(config_file_path))
+    {
+        nlohmann::json config = tartarus::readers::json_reader(config_file_path);
+        minerva_storage = minerva::minerva(config);
+        if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_temp))
+        {
+            std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
+        }        
+        return; 
+    }
+    
+    // TODO if config exists load and return 
+    
+    // TODO add missing folder 
 
     if (!std::filesystem::exists(USER_HOME + minervafs_root_folder))
     {
         std::system((MKDIR + " " + USER_HOME + minervafs_root_folder).c_str());
     }
 
-    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_basis_folder))
+    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_basis_folder))
+    // {
+    //     std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_basis_folder).c_str());
+    // }
+
+    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_registry))
+    // {
+    //     std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_registry).c_str());
+    // }
+
+    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_identifier_register))
+    // {
+    //     std::system((TOUCH + " " + USER_HOME + minervafs_root_folder + minervafs_identifier_register).c_str());
+    // }
+
+    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_temp))
     {
-        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_basis_folder).c_str());
+        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
     }
 
-    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_registry))
-    {
-        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_registry).c_str());
-    }    
+    nlohmann::json minerva_config;
+
+    minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + "/.identifiers");
+    minerva_config["base_register_path"] =  (USER_HOME + minervafs_root_folder + minervafs_registry);
+    minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);;
+    minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");
+    minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM;
+    // minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + minervafs_identifier_register); // string
+    // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string  
+    // minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);        // string
+    // minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");                                // string
+    // minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM
+
+    minerva_storage = minerva::minerva(minerva_config);    
+    tartarus::writers::json_writer(config_file_path, minerva_config);
+
+
+//    minerva_storage = minerva::minerva(t_config);      
+
+    
+    
+
 }
 
 ///
@@ -352,4 +476,30 @@ time_t get_mtime(const std::string path)
         exit(1);
     }
     return statbuf.st_mtime;
+}
+
+codes::code_params get_code_params(size_t file_size)
+{
+    int m = 15;
+
+    while (!((std::pow(2, m) * 2) <= file_size))
+    {
+        --m;
+    }
+    codes::code_params params;
+    params.code_name = "hammingcode";
+    params.m = m;
+    return params;
+}
+
+codes::code_params extract_code_params(nlohmann::json config)
+{
+    codes::code_params params;
+    params.code_name = config["name"].get<std::string>();
+
+    if (params.code_name == "hammingcode")
+    {
+        params.m = config["m"].get<int>();
+    }
+    return params;
 }

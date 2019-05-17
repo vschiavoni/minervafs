@@ -1,16 +1,25 @@
 #pragma once
 
-#define FUSE_USE_VERSION 26
+#include <codewrapper/codewrapper.hpp> 
+#include <minerva/minerva.hpp>
 
+#define FUSE_USE_VERSION 26
 #include <fuse.h>
 #include <dirent.h>
 #include <string>
 
-static const std::string minervafs_root_folder = "/.minervafs";
-static const std::string minervafs_basis_folder = "/.basis";
-static const std::string minervafs_registry = "/.registry";
 
-static std::string USER_HOME;
+
+static const std::string minervafs_root_folder = "/.minervafs";
+static const std::string minervafs_basis_folder = "/.basis/";
+static const std::string minervafs_registry = "/.registry/";
+static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
+static const std::string minervafs_config = "/.minervafs_config";
+static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
+
+static std::string USER_HOME = "";
+
+static minerva::minerva minerva_storage;
 
 // Directory pointer for point to a given directory
 // or an entry within 
@@ -58,11 +67,13 @@ struct minerva_dirp
 /*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi);
 
+/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi); 
+
 // Helper functions
 
 
 
-void setup_paths();
+void setup();
 
 ///
 /// @param path const char* is path provide from the fuse file system impl
@@ -73,3 +84,7 @@ std::string get_minerva_path(const char* path);
 std::string get_user_home();
 
 time_t get_mtime(const std::string path);
+
+codes::code_params get_code_params(size_t file_size);
+
+codes::code_params extract_code_params(nlohmann::json config);

@@ -33,10 +33,7 @@ def configure(cnf) :
     cnf.env.append_value('CXXFLAGS', cxx_flags)        
     cnf.env.append_value('LINKFLAGS',
                          link_flags)
-
-     
-
-
+    
 def build(bld):
     # REPLACE PROJECT NAME 
     bld(name = 'minerva-safefs-layer-includes',
@@ -48,7 +45,8 @@ def build(bld):
         target='minerva-safefs-layer',
         includes='../src',
         source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
-        use=['minerva-safefs-layer-includes']
+        use=['tartarus_includes', 'codewrapper_includes', 'codewrapper', 'minerva_includes',
+             'minerva', 'minerva-safefs-layer-includes']
     )
 
     
@@ -58,7 +56,8 @@ def build(bld):
         includes='../src',                                             
         source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'), 
         link_flags=['-Wl', '--whole-archive'],
-        use=['minerva-safefs-layer-includes']                          
+        use=['tartarus_includes', 'codewrapper_includes', 'codewrapper_shared', 'minerva_includes',
+             'minerva' 'minerva-safefs-layer-includes']                          
     )                                                                  
     
     
