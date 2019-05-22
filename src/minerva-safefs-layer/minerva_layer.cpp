@@ -44,7 +44,21 @@
 {
     int res = 0;
 
+    std::string filename = std::filesystem::path(path).filename().string();
+
+    if (temp_file_exists(filename))
+    {
+        std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
+        res = lstat(minerva_entry_temp_path.c_str(), stbuf);
+        if (res == -1)
+        {
+            return -errno;
+        }
+        return 0;
+    }
+    
     std::string minerva_entry_path = get_minerva_path(path);
+    std::cout << minerva_entry_path << std::endl;
     memset(stbuf, 0, sizeof(struct stat));
 
     stbuf->st_uid = getuid();
@@ -70,7 +84,22 @@
     {
         stbuf->st_mode = S_IFREG | 0664;
         stbuf->st_nlink = 1;
-        stbuf->st_size = std::filesystem::file_size(minerva_entry_path);            
+        std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
+        if(filename != ".identifiers" && filename != ".minervafs_config")
+        {
+            size_t size = std::filesystem::file_size(minerva_entry_path);
+            if ( size != 0)
+            {
+                nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
+               size = obj["file_size"].get<size_t>();
+            }
+            stbuf->st_size = size;
+        }
+        else
+        {
+            stbuf->st_size = std::filesystem::file_size(minerva_entry_path);            
+        }
+
     }
     else if (std::filesystem::is_directory(minerva_entry_path))
     {
@@ -117,9 +146,23 @@
 /*static*/ int minerva_open(const char* path, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_minerva_path(path);
+    std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" +
+        std::filesystem::path(minerva_entry_path).filename().string();
 
+
+    
     int res;
-    res = open(minerva_entry_path.c_str(), fi->flags);
+
+    if (std::filesystem::exists(minerva_entry_temp_path))
+    {
+        res = open(minerva_entry_temp_path.c_str(), fi->flags);    
+    }
+    else
+    {
+        res = open(minerva_entry_path.c_str(), fi->flags);    
+    }
+
+
     if (res == -1)
     {
         return -errno;
@@ -131,16 +174,25 @@
 /*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
-    std::string minerva_entry_path = get_minerva_path(path);
 
-    std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
+    
+    std::string minerva_entry_path = get_minerva_path(path);
+    std::cout << "read path " << minerva_entry_path << std::endl;
+    std::string filename = std::filesystem::path(path).filename().string();
 
     std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
 
+    
+    int fd;
+    int res;
+
+    (void) fi;    
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
-    
+
+        std::cout << "finding json bug" << std::endl;
         tartarus::model::coded_data coded_data = minerva_storage.load(filename);
+        std::cout << "lol" << std::endl;
 
         codes::code_params params = extract_code_params(coded_data.coding_configuration);
         codewrapper::CodeWrapper coder(params);
@@ -153,10 +205,6 @@
     }
     
     
-    int fd;
-    int res;
-
-    (void) fi;
     fd = open(minerva_entry_temp_path.c_str(), O_RDONLY);
 
     if (fd == -1)
@@ -225,7 +273,7 @@
     }
     
     auto file_size = std::filesystem::file_size(minerva_entry_path);
-    
+    std::cout << "FILE SIZE: " << file_size << std::endl;
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_path);
 
     //(static_cast<size_t>(file_size));
@@ -244,6 +292,7 @@
 
     if (minerva_storage.store(coded))
     {
+        std::cout << "DONME" << std::endl; 
         return 0;
     }
     else
@@ -289,6 +338,7 @@
     {
         return -errno;        
     }
+    std::cout << "I am in end of mknode";
     return 0;
 }
 
@@ -428,6 +478,7 @@ void setup()
     minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);;
     minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");
     minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM;
+    minerva_config["file_format"] = used_file_format;
     // minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + minervafs_identifier_register); // string
     // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string  
     // minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);        // string
@@ -502,4 +553,15 @@ codes::code_params extract_code_params(nlohmann::json config)
         params.m = config["m"].get<int>();
     }
     return params;
+}
+
+void set_file_format(minerva::file_format file_format)
+{
+    used_file_format = file_format;
+}
+
+bool temp_file_exists(const std::string& filename)
+{
+    std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
+    return std::filesystem::exists(minerva_entry_temp_path);
 }

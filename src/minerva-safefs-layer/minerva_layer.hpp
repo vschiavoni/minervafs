@@ -9,7 +9,6 @@
 #include <string>
 
 
-
 static const std::string minervafs_root_folder = "/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
 static const std::string minervafs_registry = "/.registry/";
@@ -20,6 +19,8 @@ static const std::string minervafs_temp = "/.temp"; // For temporarly decode fil
 static std::string USER_HOME = "";
 
 static minerva::minerva minerva_storage;
+
+static minerva::file_format used_file_format = minerva::file_format::JSON;
 
 // Directory pointer for point to a given directory
 // or an entry within 
@@ -88,3 +89,7 @@ time_t get_mtime(const std::string path);
 codes::code_params get_code_params(size_t file_size);
 
 codes::code_params extract_code_params(nlohmann::json config);
+
+void set_file_format(minerva::file_format file_format);
+
+bool temp_file_exists(const std::string& filename);

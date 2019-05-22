@@ -8,6 +8,7 @@ static struct fuse_operations minerva_operations;
 
 int main(int argc, char* argv[])
 {
+    set_file_format(minerva::file_format::MSGPACK);
     minerva_operations.init = minerva_init;
     minerva_operations.opendir = minerva_opendir;
     minerva_operations.readdir = minerva_readdir;
