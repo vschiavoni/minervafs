@@ -35,7 +35,16 @@ def configure(cnf) :
                          link_flags)
     
 def build(bld):
-    # REPLACE PROJECT NAME 
+
+    libs = ['cryptopp', 'fuse']
+
+    if sys.platform == 'linux' or sys.platform == 'linux2':
+        libs.append('stdc++fs')
+        
+    if sys.platform == 'darwin':
+        libs.append('c++fs')
+
+        
     bld(name = 'minerva-safefs-layer-includes',
         includes='./src',
         export_includes='./src')
@@ -45,6 +54,7 @@ def build(bld):
         target='minerva-safefs-layer',
         includes='../src',
         source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
+        lib = libs, 
         use=['tartarus_includes', 'codewrapper_includes', 'codewrapper', 'minerva_includes',
              'minerva', 'minerva-safefs-layer-includes']
     )
@@ -54,7 +64,8 @@ def build(bld):
         features = 'cxx',                                              
         target='minerva-safefs-layer-shared',                                 
         includes='../src',                                             
-        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'), 
+        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
+        lib = libs,               
         link_flags=['-Wl', '--whole-archive'],
         use=['tartarus_includes', 'codewrapper_includes', 'codewrapper_shared', 'minerva_includes',
              'minerva' 'minerva-safefs-layer-includes']                          
