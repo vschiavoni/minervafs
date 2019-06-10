@@ -2,7 +2,7 @@ import sys
 
 def build(bld):
 
-    libs = ['cryptopp']
+    libs = ['cryptopp', 'fuse']
 
     link_flags = list()
     
@@ -16,6 +16,6 @@ def build(bld):
     bld(features = 'cxx cxxprogram',
         target = 'minervafs_example',
         source = 'minervafs_example.cpp',
-        link_flags = ['-lfuse'],
+        lib = libs,
         use = ['minerva-safefs-layer-includes', 'minerva-safefs-layer']
     )
