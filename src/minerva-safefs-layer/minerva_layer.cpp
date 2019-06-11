@@ -1,5 +1,7 @@
 #include "minerva_layer.hpp"
 
+#include <minerva/minerva.hpp>
+
 #include <codewrapper/codewrapper.hpp>
 
 #include <tartarus/model/raw_data.hpp>
@@ -7,6 +9,7 @@
 #include <tartarus/model/coded_pair.hpp>
 #include <tartarus/readers.hpp>
 #include <tartarus/writers.hpp>
+
 
 
 #include <pwd.h>
@@ -28,6 +31,67 @@
 #include <filesystem>
 
 #include <iostream> // REMEMBER TO REMOVE
+
+static const std::string minervafs_root_folder = "/.minervafs";
+static const std::string minervafs_basis_folder = "/.basis/";
+static const std::string minervafs_registry = "/.registry/";
+static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
+static const std::string minervafs_config = "/.minervafs_config";
+static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
+
+static std::string USER_HOME = "";
+
+static minerva::minerva minerva_storage;
+
+static minerva::file_format used_file_format = minerva::file_format::JSON;
+
+// Helper functions
+
+void setup();
+
+///
+/// @param path const char* is path provide from the fuse file system impl
+/// @return a path correct for the minerva folder 
+/// 
+std::string get_minerva_path(const char* path);
+
+std::string get_user_home();
+
+time_t get_mtime(const std::string path);
+
+codes::code_params get_code_params(size_t file_size);
+
+codes::code_params extract_code_params(nlohmann::json config);
+
+void set_file_format(minerva::file_format file_format);
+
+void set_file_format(int file_format)
+{
+    switch(file_format)
+    {
+    case 0:
+        set_file_format(minerva::file_format::JSON);
+        break;
+    case 1:
+        set_file_format(minerva::file_format::BSON);
+        break;
+    case 2:
+        set_file_format(minerva::file_format::UBJSON);
+        break;
+    case 3:
+        set_file_format(minerva::file_format::CBOR);
+        break;
+    case 4:
+        set_file_format(minerva::file_format::MSGPACK);
+        break;
+    default:
+        set_file_format(minerva::file_format::JSON);
+        break;        
+    }
+}
+
+bool temp_file_exists(const std::string& filename);
+
 
 
 /*static*/ void* minerva_init(struct fuse_conn_info *conn)
