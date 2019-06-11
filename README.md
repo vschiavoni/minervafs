@@ -1,11 +1,24 @@
 # minerva-safefs-layer
-This repository contains a layer for the safeFS file system developed at neuchatel Univeristy
+This repository contains a layer for the safeFS file system developed at neuchatel University
 
 # SafeFS 
 
 SafeFS is a software defined file system which is highly modular for reference see:  [github.com/safecloud-project/safefs](https://github.com/safecloud-project/safefs)
 
+# Dependencies
+
+* Clang 8+
+* [nlohmann's JSON](https://github.com/nlohmann/json) 
+* Python
+* FUSE 2
+
 # Build 
+
+Update the submodules to build the layer.
+
+```bash
+git submodule update
+```
 
 We build both a shared and static version of this library, just build using the command 
 
