@@ -22,7 +22,7 @@
 #include <dirent.h>
 
 #include <cmath>
-#include <cstring> 
+#include <cstring>
 #include <string>
 
 
@@ -51,8 +51,8 @@ void setup();
 
 ///
 /// @param path const char* is path provide from the fuse file system impl
-/// @return a path correct for the minerva folder 
-/// 
+/// @return a path correct for the minerva folder
+///
 std::string get_minerva_path(const char* path);
 
 std::string get_user_home();
@@ -86,7 +86,7 @@ void set_file_format(int file_format)
         break;
     default:
         set_file_format(minerva::file_format::JSON);
-        break;        
+        break;
     }
 }
 
@@ -120,7 +120,7 @@ bool temp_file_exists(const std::string& filename);
         }
         return 0;
     }
-    
+
     std::string minerva_entry_path = get_minerva_path(path);
     std::cout << minerva_entry_path << std::endl;
     memset(stbuf, 0, sizeof(struct stat));
@@ -137,7 +137,7 @@ bool temp_file_exists(const std::string& filename);
     {
         return -ENOENT;
     }
-    
+
     if (strcmp(path, "/") == 0)
     {
         // TODO: Look at st mode
@@ -161,7 +161,7 @@ bool temp_file_exists(const std::string& filename);
         }
         else
         {
-            stbuf->st_size = std::filesystem::file_size(minerva_entry_path);            
+            stbuf->st_size = std::filesystem::file_size(minerva_entry_path);
         }
 
     }
@@ -169,7 +169,7 @@ bool temp_file_exists(const std::string& filename);
     {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 1;
-        //stbuf->st_size = std::filesystem::file_size(minerva_entry_path); // TODO: Chekc if this is valid   
+        //stbuf->st_size = std::filesystem::file_size(minerva_entry_path); // TODO: Chekc if this is valid
     }
     else
     {
@@ -182,16 +182,16 @@ bool temp_file_exists(const std::string& filename);
                             struct fuse_file_info *fi)
 {
 
-    (void) fi; 
-    std::string minerva_entry_path = get_minerva_path(path);    
+    (void) fi;
+    std::string minerva_entry_path = get_minerva_path(path);
     if (!std::filesystem::exists(minerva_entry_path))
     {
         return -ENOENT;
     }
-        
+
     stbuf->st_uid = getuid();
     stbuf->st_gid = getgid();
-    stbuf->st_mtime = get_mtime(minerva_entry_path);    
+    stbuf->st_mtime = get_mtime(minerva_entry_path);
     stbuf->st_mode = S_IFREG | 0777;
     stbuf->st_nlink = 1;
     return 0;
@@ -203,9 +203,9 @@ bool temp_file_exists(const std::string& filename);
     (void) mask;
     // TODO: update
     return 0;
-    
+
 }
-    
+
 
 /*static*/ int minerva_open(const char* path, struct fuse_file_info* fi)
 {
@@ -214,16 +214,16 @@ bool temp_file_exists(const std::string& filename);
         std::filesystem::path(minerva_entry_path).filename().string();
 
 
-    
+
     int res;
 
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
-        res = open(minerva_entry_temp_path.c_str(), fi->flags);    
+        res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
     else
     {
-        res = open(minerva_entry_path.c_str(), fi->flags);    
+        res = open(minerva_entry_path.c_str(), fi->flags);
     }
 
 
@@ -232,25 +232,25 @@ bool temp_file_exists(const std::string& filename);
         return -errno;
     }
     close(res);
-    return 0; 
+    return 0;
 }
 
 /*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
 
-    
+
     std::string minerva_entry_path = get_minerva_path(path);
     std::cout << "read path " << minerva_entry_path << std::endl;
     std::string filename = std::filesystem::path(path).filename().string();
 
     std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
 
-    
+
     int fd;
     int res;
 
-    (void) fi;    
+    (void) fi;
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
 
@@ -262,13 +262,13 @@ bool temp_file_exists(const std::string& filename);
         codewrapper::CodeWrapper coder(params);
 
         tartarus::model::raw_data data = coder.decode_data(coded_data);
-    
+
 
 
         tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
     }
-    
-    
+
+
     fd = open(minerva_entry_temp_path.c_str(), O_RDONLY);
 
     if (fd == -1)
@@ -288,7 +288,7 @@ bool temp_file_exists(const std::string& filename);
 }
 
 
-// TODO: Inject the usage of GDD 
+// TODO: Inject the usage of GDD
 /*static*/ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
@@ -298,7 +298,7 @@ bool temp_file_exists(const std::string& filename);
     int res;
 
     (void) fi;
-    std::string minerva_entry_path = get_minerva_path(path);    
+    std::string minerva_entry_path = get_minerva_path(path);
     fd = open(minerva_entry_path.c_str(), O_WRONLY);
 
     // If we are unable to open a file we return an error
@@ -307,7 +307,7 @@ bool temp_file_exists(const std::string& filename);
         return -errno;
     }
 
-    // Right now we just make a pars throgh of data 
+    // Right now we just make a pars throgh of data
     res = pwrite(fd, buf, size, offset);
     if (res == -1)
     {
@@ -322,26 +322,31 @@ bool temp_file_exists(const std::string& filename);
 /*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
 {
     (void) fi;
-    
+
     std::cout << "entered release" << std::endl;
     std::string minerva_entry_path = get_minerva_path(path);
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
-        return -errno;        
+        return -errno;
     }
-    
+
     if (std::filesystem::is_directory(minerva_entry_path))
     {
         return 0;
     }
-    
+
     auto file_size = std::filesystem::file_size(minerva_entry_path);
     std::cout << "FILE SIZE: " << file_size << std::endl;
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_path);
 
+    // Handle the case an empty file is released (ie: lock from file from rocksdb)
+    if (file_size == 0) {
+      return 0;
+    }
+
     //(static_cast<size_t>(file_size));
-    
+
     // minerva_read(path, (char*)data.data(), data.size(), 0, fi);
 
 
@@ -356,7 +361,7 @@ bool temp_file_exists(const std::string& filename);
 
     if (minerva_storage.store(coded))
     {
-        std::cout << "DONME" << std::endl; 
+        std::cout << "DONME" << std::endl;
         return 0;
     }
     else
@@ -369,7 +374,7 @@ bool temp_file_exists(const std::string& filename);
 /*static*/ int minerva_truncate(const char *path, off_t size)
 {
     (void) path;
-    (void) size;                    
+    (void) size;
     return 0;
 }
 
@@ -397,10 +402,10 @@ bool temp_file_exists(const std::string& filename);
     {
         res = mknod(persistent_entry_path.c_str(), mode, rdev);
     }
-    
+
     if (res == -1)
     {
-        return -errno;        
+        return -errno;
     }
     std::cout << "I am in end of mknode";
     return 0;
@@ -432,7 +437,7 @@ bool temp_file_exists(const std::string& filename);
     return (struct minerva_dirp*)(uintptr_t)fi->fh;
 }
 
-// TODO: update to open sub dirs 
+// TODO: update to open sub dirs
 /*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi)
 {
     int res;
@@ -484,6 +489,15 @@ bool temp_file_exists(const std::string& filename);
     return 0;
 }
 
+/*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi) {
+    std::string minerva_entry_path = get_minerva_path(path);
+    if (!std::filesystem::exists(minerva_entry_path)) {
+        return -ENOENT;
+    }
+    (void) fi;
+    return 0;
+}
+
 // Helper functions
 
 
@@ -502,13 +516,13 @@ void setup()
         if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_temp))
         {
             std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
-        }        
-        return; 
+        }
+        return;
     }
-    
-    // TODO if config exists load and return 
-    
-    // TODO add missing folder 
+
+    // TODO if config exists load and return
+
+    // TODO add missing folder
 
     if (!std::filesystem::exists(USER_HOME + minervafs_root_folder))
     {
@@ -544,26 +558,26 @@ void setup()
     minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM;
     minerva_config["file_format"] = used_file_format;
     // minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + minervafs_identifier_register); // string
-    // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string  
+    // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string
     // minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);        // string
     // minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");                                // string
     // minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM
 
-    minerva_storage = minerva::minerva(minerva_config);    
+    minerva_storage = minerva::minerva(minerva_config);
     tartarus::writers::json_writer(config_file_path, minerva_config);
 
 
-//    minerva_storage = minerva::minerva(t_config);      
+//    minerva_storage = minerva::minerva(t_config);
 
-    
-    
+
+
 
 }
 
 ///
 /// @param path const char* is path provide from the fuse file system impl
-/// @return a path correct for the minerva folder 
-/// 
+/// @return a path correct for the minerva folder
+///
 std::string get_minerva_path(const char* path)
 {
     std::string internal_path(path);

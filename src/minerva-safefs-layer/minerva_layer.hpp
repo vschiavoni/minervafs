@@ -12,7 +12,7 @@ static short CBOR = 3;
 static short MSGPACK = 4;
 
 // Directory pointer for point to a given directory
-// or an entry within 
+// or an entry within
 struct minerva_dirp
 {
     DIR* dp;
@@ -57,7 +57,9 @@ struct minerva_dirp
 /*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi);
 
-/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi); 
+/*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi);
+
+/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi);
 
 // Helper function
 void set_file_format(int file_format);
