@@ -109,7 +109,6 @@ bool temp_file_exists(const std::string& filename);
     int res = 0;
 
     std::string filename = std::filesystem::path(path).filename().string();
-
     if (temp_file_exists(filename))
     {
         std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
@@ -152,7 +151,7 @@ bool temp_file_exists(const std::string& filename);
         if(filename != ".identifiers" && filename != ".minervafs_config")
         {
             size_t size = std::filesystem::file_size(minerva_entry_path);
-            if ( size != 0)
+            if (size > 16)
             {
                 nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
                size = obj["file_size"].get<size_t>();
@@ -323,12 +322,11 @@ bool temp_file_exists(const std::string& filename);
 {
     (void) fi;
 
-    std::cout << "entered release" << std::endl;
     std::string minerva_entry_path = get_minerva_path(path);
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
-        return -errno;
+        return -ENOENT;
     }
 
     if (std::filesystem::is_directory(minerva_entry_path))
@@ -341,8 +339,8 @@ bool temp_file_exists(const std::string& filename);
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_path);
 
     // Handle the case an empty file is released (ie: lock from file from rocksdb)
-    if (file_size == 0) {
-      return 0;
+    if (file_size < 16) {
+        return 0;
     }
 
     //(static_cast<size_t>(file_size));
@@ -361,7 +359,6 @@ bool temp_file_exists(const std::string& filename);
 
     if (minerva_storage.store(coded))
     {
-        std::cout << "DONME" << std::endl;
         return 0;
     }
     else
