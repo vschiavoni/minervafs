@@ -121,7 +121,6 @@ bool temp_file_exists(const std::string& filename);
     }
 
     std::string minerva_entry_path = get_minerva_path(path);
-    std::cout << minerva_entry_path << std::endl;
     memset(stbuf, 0, sizeof(struct stat));
 
     stbuf->st_uid = getuid();
@@ -348,7 +347,6 @@ bool temp_file_exists(const std::string& filename);
     }
 
     auto file_size = std::filesystem::file_size(minerva_entry_path);
-    std::cout << "FILE SIZE: " << file_size << std::endl;
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_path);
 
     //(static_cast<size_t>(file_size));
@@ -367,7 +365,8 @@ bool temp_file_exists(const std::string& filename);
 
     if (minerva_storage.store(coded))
     {
-        if (need_to_remove_temp_file) {
+        if (need_to_remove_temp_file)
+        {
             unlink(minerva_entry_path.c_str());
         }
         return 0;
