@@ -499,10 +499,26 @@ bool temp_file_exists(const std::string& filename);
 /*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi) {
     std::string minerva_entry_path = get_minerva_path(path);
     std::string minerva_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + path;
-    if (!std::filesystem::exists(minerva_entry_path) && !std::filesystem::exists(minerva_temp_path)) {
+    if (!std::filesystem::exists(minerva_entry_path) && !std::filesystem::exists(minerva_temp_path))
+    {
         return -ENOENT;
     }
     (void) fi;
+    return 0;
+}
+
+/*static*/ int minerva_rename(const char* from, const char* to) {
+    std::string source = get_minerva_path(from);
+    if (!std::filesystem::exists(source))
+    {
+        return -ENOENT;
+    }
+    //Need to determine whether `to` is a file or a directory
+    std::string destination = get_minerva_path(to);
+    if (rename(source.c_str(), destination.c_str()) == -1)
+    {
+        return -errno;
+    }
     return 0;
 }
 

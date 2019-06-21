@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
     minerva_operations.mkdir = minerva_mkdir;
     minerva_operations.truncate = minerva_truncate;
     minerva_operations.flush = minerva_flush;
+    minerva_operations.rename = minerva_rename;
 
     return fuse_main(argc, argv, &minerva_operations, NULL);
 }

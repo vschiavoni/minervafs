@@ -61,5 +61,7 @@ struct minerva_dirp
 
 /*static*/ int minerva_release(const char* path, struct fuse_file_info *fi);
 
+/*static*/ int minerva_rename(const char* from, const char* to);
+
 // Helper function
 void set_file_format(int file_format);
