@@ -63,5 +63,9 @@ struct minerva_dirp
 
 /*static*/ int minerva_rename(const char* from, const char* to);
 
+//TODO getxattr
+//TODO setattr
+//TODO setxattr
+
 // Helper function
 void set_file_format(int file_format);
