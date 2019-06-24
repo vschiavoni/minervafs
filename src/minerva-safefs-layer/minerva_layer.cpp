@@ -38,6 +38,7 @@ static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
+static const std::vector<std::string> IGNORE = {".basis", ".identifiers", ".minervafs_config", ".registry", ".temp"};
 
 static std::string USER_HOME = "";
 
@@ -498,6 +499,10 @@ bool temp_file_exists(const std::string& filename);
     for (const auto& entry : std::filesystem::directory_iterator(minerva_entry_path))
     {
         std::string entry_name = entry.path().filename().string();
+        if (strcmp(path, "/") == 0 && std::find(IGNORE.begin(), IGNORE.end(), entry_name) != IGNORE.end())
+        {
+            continue;
+        }
         filler(buf, entry_name.c_str(), NULL, 0);
     }
 
