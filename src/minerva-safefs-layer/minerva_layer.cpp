@@ -197,9 +197,17 @@ bool temp_file_exists(const std::string& filename);
 
 /*static*/ int minerva_access(const char* path, int mask)
 {
-    (void) path;
     (void) mask;
-    // TODO: update
+    std::string minerva_entry_path = get_minerva_path(path);
+    if (!std::filesystem::exists(minerva_entry_path))
+    {
+        std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + path;
+        if (!std::filesystem::exists(minerva_entry_temp_path))
+        {
+            return -ENOENT;
+        }
+        return 0;
+    }
     return 0;
 
 }
