@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
     minerva_operations.access = minerva_access;
     minerva_operations.releasedir = minerva_releasedir;
     minerva_operations.write = minerva_write;
+    minerva_operations.create = minerva_create;
     minerva_operations.open = minerva_open;
     minerva_operations.read = minerva_read;
     minerva_operations.release = minerva_release;

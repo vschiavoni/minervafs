@@ -31,6 +31,8 @@ struct minerva_dirp
 
 /*static*/ int minerva_access(const char* path, int mask);
 
+/*static*/ int minerva_create(const char* path, mode_t mode, struct fuse_file_info * fi);
+
 /*static*/ int minerva_open(const char* path, struct fuse_file_info* fi);
 
 /*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,

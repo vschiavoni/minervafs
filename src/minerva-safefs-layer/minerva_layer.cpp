@@ -93,6 +93,7 @@ void set_file_format(int file_format)
 }
 
 bool temp_file_exists(const std::string& filename);
+void decode_to_temp(const char* path);
 
 
 
@@ -112,7 +113,6 @@ bool temp_file_exists(const std::string& filename);
     int res = 0;
 
     // Check if the file is decoded in the temp directory
-    std::string filename = std::filesystem::path(path).filename().string();
     std::string minerva_entry_temp_path = get_minerva_temp_path(path);
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
@@ -129,58 +129,46 @@ bool temp_file_exists(const std::string& filename);
     memset(stbuf, 0, sizeof(struct stat));
 
 
-    // If the entry actually exists we have to "fake" m_time
-    if (std::filesystem::exists(minerva_entry_path))
-    {
-        stbuf->st_mtime = get_mtime(minerva_entry_path);
-    }
-    else
+    if (!std::filesystem::exists(minerva_entry_path))
     {
         return -ENOENT;
     }
 
+    // If the entry actually exists we have to "fake" m_time
+    stbuf->st_mtime = get_mtime(minerva_entry_path);
     stbuf->st_uid = getuid();
     stbuf->st_gid = getgid();
 
-    if (strcmp(path, "/") == 0)
-    {
-        // TODO: Look at st mode
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-    }
-    else if (!std::filesystem::is_directory(minerva_entry_path))
-    {
-        stbuf->st_mode = S_IFREG | 0664;
-        stbuf->st_nlink = 1;
-        std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
-        if(filename != ".identifiers" && filename != ".minervafs_config")
-        {
-            size_t size = std::filesystem::file_size(minerva_entry_path);
-            std::cout << "\tsize = " << size << std::endl;
-            if (size != 0)
-            {
-                nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
-                size = obj["file_size"].get<size_t>();
-                std::cout << "\tunpacked size:" << size << std::endl;
-            }
-            stbuf->st_size = size;
-        }
-        else
-        {
-            stbuf->st_size = std::filesystem::file_size(minerva_entry_path);
-        }
-
-    }
-    else if (std::filesystem::is_directory(minerva_entry_path))
+    // If the path points to a directory
+    if (std::filesystem::is_directory(minerva_entry_path))
     {
         stbuf->st_mode = S_IFDIR | 0755;
+        // If that directory is the root
+        if (strcmp(path, "/") == 0)
+        {
+            // TODO: Look at st mode
+            stbuf->st_nlink = 2;
+            return 0;
+        }
         stbuf->st_nlink = 1;
         //stbuf->st_size = std::filesystem::file_size(minerva_entry_path); // TODO: Chekc if this is valid
+        return 0;
     }
-    else
+    // If the path points to a file
+    stbuf->st_mode = S_IFREG | 0664;
+    stbuf->st_nlink = 1;
+    
+    std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
+    size_t size = std::filesystem::file_size(minerva_entry_path);
+    std::cout << "\tsize = " << size << std::endl;
+    if (size != 0)
     {
-        res = -ENOENT;
+        nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
+        size = obj["file_size"].get<size_t>();
+        std::cout << "\tunpacked size:" << size << std::endl;
     }
+    stbuf->st_size = size;
+
     return res;
 }
 
@@ -220,33 +208,62 @@ bool temp_file_exists(const std::string& filename);
 
 }
 
+/*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
+{
+    std::string minerva_entry_temp_path = get_minerva_temp_path(path);
+    std::cout << "minerva_create(" << path << "): About to open temp file (" << minerva_entry_temp_path  << ")" << std::endl;
+    int file_handle = open(minerva_entry_temp_path.c_str(), fi->flags, mode);
+    if (file_handle == -1)
+    {
+        return -errno;
+    }
+    std::cout << "minerva_create(" << path << "): Successfully opened temp file" << minerva_entry_temp_path << " (" <<  file_handle  << ")" << std::endl;
+    fi->fh = file_handle;
+    return 0;
+}
 
 /*static*/ int minerva_open(const char* path, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_minerva_path(path);
     std::string minerva_entry_temp_path = get_minerva_temp_path(path);
+    printf("minerva_open(%s) flags: %x\n", path, fi->flags);
 
     int res;
 
+    //FIXME check whether open flags are set to create empty file
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
+        std::cout << "minerva_open(" << path << "): Found temp file (" << minerva_entry_temp_path << ")"  << std::endl;
+        res = open(minerva_entry_temp_path.c_str(), fi->flags);
+    }
+    else if (std::filesystem::exists(minerva_entry_path))
+    {
+        std::cout << "minerva_open(" << path << "): Found coded file (" << minerva_entry_path << ")"  << std::endl;
+        //Decode existing file in temp directory
+        decode_to_temp(path);
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
     else
     {
-        if (!std::filesystem::exists(minerva_entry_path))
+        std::cout << "minerva_open(" << path << "): Will create new file if flag is set (" << minerva_entry_path << ")"  << std::endl;
+        // Open a new empty file if create flag is on
+        if (fi->flags & O_CREAT)
         {
+            std::cout << "O_CREAT  : " << O_CREAT << std::endl;
+            std::cout << "fi->flags: " << fi->flags << std::endl;
+            std::cout << "minerva_open(" << path << "): Flaf is set for creation (" << minerva_entry_path << "): " << std::endl;
+            res = open(minerva_entry_temp_path.c_str(), fi->flags);   
+        } else {
             return -ENOENT;
         }
-        res = open(minerva_entry_path.c_str(), fi->flags);
     }
-
 
     if (res == -1)
     {
         return -errno;
     }
-    return res;
+    fi->fh = res;
+    return 0;
 }
 
 /*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
@@ -382,8 +399,9 @@ bool temp_file_exists(const std::string& filename);
     }
 
     size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
-    std::cout << "File to code " << file_size << std::endl;
+    std::cout << "minerva_release(" << path << "): About to load file (" << file_size << "B)" << std::endl;
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
+    std::cout << "minerva_release(" << path << "): File loaded" << std::endl;
 
     codes::code_params code_param = get_code_params(file_size);
     codewrapper::CodeWrapper code(code_param);
@@ -391,18 +409,31 @@ bool temp_file_exists(const std::string& filename);
     std::string filename = (std::filesystem::path(path)).filename().string();
     std::string mime_type = "TODO"; // TODO: Change;
 
+
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
+    std::cout << "minerva_release(" << path << "): About to encode data" << std::endl;
     tartarus::model::coded_data coded = code.encode_data(raw);
+    std::cout << "minerva_release(" << path << "): Data encoded" << std::endl;
 
     if (minerva_storage.store(coded))
     {
-        unlink(minerva_entry_temp_path.c_str());
+        struct stat* buf = (struct stat*) malloc(sizeof(struct stat));
+        assert(lstat(minerva_entry_path.c_str(), buf) == 0);
+        std::cerr << "minerva_release(" << path << "): Stored the file at location " << minerva_entry_path << " (" << buf->st_size << "B)" << std::endl;
+        free(buf);
+        //Check wether it is written at the right place
+        std::cout << "minerva_release(" << path << "): About to close file handle (" << fi->fh << ")" << std::endl;
+        close(fi->fh);
+        std::cout << "minerva_release(" << path << "): Closed file handle (" << fi->fh << ")" << std::endl;
+        std::cout << "minerva_release(" << path << "): About to unlink temp file (" << minerva_entry_temp_path  << ")" << std::endl;
+        assert(unlink(minerva_entry_temp_path.c_str()) == 0);
+        std::cout << "minerva_release(" << path << "): Unlinked temp file (" << minerva_entry_temp_path  << ")" << std::endl;
         return 0;
     }
-    else
-    {
-        return -errno;
-    }
+    std::cerr << "minerva_release(" << path << "): ";
+    perror("There was an error storing the coded file");
+
+    return -errno;
 }
 
 // TODO: update as needed
