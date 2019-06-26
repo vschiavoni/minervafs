@@ -65,6 +65,10 @@ struct minerva_dirp
 
 /*static*/ int minerva_rename(const char* from, const char* to);
 
+/*static*/ int minerva_unlink(const char* path);
+
+
+
 //TODO getxattr
 //TODO setattr
 //TODO setxattr

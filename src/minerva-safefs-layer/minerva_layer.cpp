@@ -353,7 +353,8 @@ void decode_to_temp(const char* path);
         std::cout << "minerva_write(" << path << "): Coded file decoded in temp directory" << std::endl;
     }
 
-    int fd = open(minerva_entry_temp_path.c_str(), O_WRONLY);
+    //int fd = open(minerva_entry_temp_path.c_str(), O_WRONLY);
+    int fd = fi->fh;
     // If we are unable to open a file we return an error
     if (fd == -1)
     {
@@ -524,6 +525,7 @@ void decode_to_temp(const char* path);
 // Make items
 /*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
 {
+    std::cout << "minerva_mknod(" << path << ")" << std::endl;
     int res;
 
     std::string persistent_entry_path = get_minerva_path(path);
@@ -550,7 +552,8 @@ void decode_to_temp(const char* path);
     {
         return -errno;
     }
-    std::cout << "I am in end of mknode";
+        
+    std::cout << "minerva_mknod(" << path << "): " << "I am in end of mknode";
     return 0;
 }
 
@@ -657,6 +660,19 @@ void decode_to_temp(const char* path);
     std::string destination = get_minerva_path(to);
     if (rename(source.c_str(), destination.c_str()) == -1)
     {
+        return -errno;
+    }
+    return 0;
+}
+
+/*static*/ int minerva_unlink(const char* path)
+{
+    std::string entry_path = get_minerva_path(path);
+    if (!std::filesystem::exists(entry_path))
+    {
+        return -ENOENT;
+    }
+    if (unlink(entry_path.c_str()) == -1) {
         return -errno;
     }
     return 0;
