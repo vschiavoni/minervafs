@@ -93,6 +93,13 @@ void set_file_format(int file_format)
 }
 
 bool temp_file_exists(const std::string& filename);
+
+/**
+ * Encodes a file from temporary storage to temporary storage
+ * @param path Path to file as seen on the mountpoint
+ * @return 0 If the encoding went right, -errno otherwise
+ */
+int encode(const char* path);
 void decode_to_temp(const char* path);
 
 
@@ -399,42 +406,7 @@ void decode_to_temp(const char* path);
         return 0;
     }
 
-    size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
-    std::cout << "minerva_release(" << path << "): About to load file (" << file_size << "B)" << std::endl;
-    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
-    std::cout << "minerva_release(" << path << "): File loaded" << std::endl;
-
-    codes::code_params code_param = get_code_params(file_size);
-    codewrapper::CodeWrapper code(code_param);
-
-    std::string filename = (std::filesystem::path(path)).filename().string();
-    std::string mime_type = "TODO"; // TODO: Change;
-
-
-    tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
-    std::cout << "minerva_release(" << path << "): About to encode data" << std::endl;
-    tartarus::model::coded_data coded = code.encode_data(raw);
-    std::cout << "minerva_release(" << path << "): Data encoded" << std::endl;
-
-    if (minerva_storage.store(coded))
-    {
-        struct stat* buf = (struct stat*) malloc(sizeof(struct stat));
-        assert(lstat(minerva_entry_path.c_str(), buf) == 0);
-        std::cerr << "minerva_release(" << path << "): Stored the file at location " << minerva_entry_path << " (" << buf->st_size << "B)" << std::endl;
-        free(buf);
-        //Check wether it is written at the right place
-        std::cout << "minerva_release(" << path << "): About to close file handle (" << fi->fh << ")" << std::endl;
-        close(fi->fh);
-        std::cout << "minerva_release(" << path << "): Closed file handle (" << fi->fh << ")" << std::endl;
-        std::cout << "minerva_release(" << path << "): About to unlink temp file (" << minerva_entry_temp_path  << ")" << std::endl;
-        assert(unlink(minerva_entry_temp_path.c_str()) == 0);
-        std::cout << "minerva_release(" << path << "): Unlinked temp file (" << minerva_entry_temp_path  << ")" << std::endl;
-        return 0;
-    }
-    std::cerr << "minerva_release(" << path << "): ";
-    perror("There was an error storing the coded file");
-
-    return -errno;
+    return encode(path);
 }
 
 // TODO: update as needed
@@ -501,25 +473,7 @@ void decode_to_temp(const char* path);
     }
 
     // Encode modified file
-    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
-    codes::code_params code_param = get_code_params(size);
-    codewrapper::CodeWrapper code(code_param);
-
-    std::string filename = (std::filesystem::path(path)).filename().string();
-    std::string mime_type = "TODO"; // TODO: Change;
-
-    tartarus::model::raw_data raw {0, static_cast<uint32_t>(size), filename, mime_type, data};
-    tartarus::model::coded_data coded = code.encode_data(raw);
-
-    if (minerva_storage.store(coded) != 0)
-    {
-        return -errno;
-    }
-    if (unlink(minerva_entry_temp_path.c_str()) == -1)
-    {
-        return -errno;
-    }
-    return 0;
+    return encode(path);
 }
 
 // Make items
@@ -861,6 +815,29 @@ bool temp_file_exists(const std::string& filename)
 {
     std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
     return std::filesystem::exists(minerva_entry_temp_path);
+}
+
+
+int encode(const char* path)
+{
+    std::string minerva_entry_temp_path = get_minerva_temp_path(path);
+    size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
+    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
+
+    codes::code_params code_param = get_code_params(file_size);
+    codewrapper::CodeWrapper code(code_param);
+    std::string filename = (std::filesystem::path(path)).filename().string();
+    std::string mime_type = "TODO"; // TODO: Change;
+    tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
+    tartarus::model::coded_data coded = code.encode_data(raw);
+
+    if (!minerva_storage.store(coded))
+    {
+        return -errno;
+    }
+    assert(unlink(minerva_entry_temp_path.c_str()) == 0);
+    return 0;
+
 }
 
 void decode_to_temp(const char* path)
