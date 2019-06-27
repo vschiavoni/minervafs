@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
     minerva_operations.flush = minerva_flush;
     minerva_operations.rename = minerva_rename;
     minerva_operations.unlink = minerva_unlink;
+    minerva_operations.utimens = minerva_utimens;
 
     return fuse_main(argc, argv, &minerva_operations, NULL);
 }

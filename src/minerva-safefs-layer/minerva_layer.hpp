@@ -67,7 +67,7 @@ struct minerva_dirp
 
 /*static*/ int minerva_unlink(const char* path);
 
-
+/*static*/ int minerva_utimens(const char* path, const struct timespec tv[2]);
 
 //TODO getxattr
 //TODO setattr

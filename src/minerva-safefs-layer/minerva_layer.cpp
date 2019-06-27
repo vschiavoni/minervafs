@@ -678,6 +678,29 @@ void decode_to_temp(const char* path);
     return 0;
 }
 
+/*static*/ int minerva_utimens(const char* path, const struct timespec tv[2])
+{
+    std::string minerva_entry = get_minerva_path(path);
+    if (!std::filesystem::exists(minerva_entry))
+    {
+        minerva_entry = get_minerva_temp_path(path);
+        if (!std::filesystem::exists(minerva_entry))
+        {
+            return -ENOENT;
+        }
+    }
+    int fd = open(minerva_entry.c_str(), O_ASYNC);
+    if (fd == -1) {
+        return -errno;
+    }
+    if (futimens(fd, tv) == -1)
+    {
+        return -errno;
+    }
+    close(fd);
+    return 0;
+}
+
 // Helper functions
 
 
