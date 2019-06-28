@@ -183,23 +183,8 @@ void decode_to_temp(const char* path);
 /*static*/ int minerva_fgetattr(const char *path, struct stat *stbuf,
                             struct fuse_file_info *fi)
 {
-
     (void) fi;
-    std::cout << "fgetattr(" << path << ")" << std::endl;
-    std::string minerva_entry_path = get_minerva_path(path);
-    if (!std::filesystem::exists(minerva_entry_path))
-    {
-
-        std::cerr << "fgetattr(" << path << "): Could not find file" << std::endl;
-        return -ENOENT;
-    }
-
-    stbuf->st_uid = getuid();
-    stbuf->st_gid = getgid();
-    stbuf->st_mtime = get_mtime(minerva_entry_path);
-    stbuf->st_mode = S_IFREG | 0777;
-    stbuf->st_nlink = 1;
-    return 0;
+    return minerva_getattr(path, stbuf);
 }
 
 /*static*/ int minerva_access(const char* path, int mask)
