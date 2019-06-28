@@ -138,6 +138,7 @@ void decode_to_temp(const char* path);
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
+        std::cerr << "getattr(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
 
@@ -184,9 +185,12 @@ void decode_to_temp(const char* path);
 {
 
     (void) fi;
+    std::cout << "fgetattr(" << path << ")" << std::endl;
     std::string minerva_entry_path = get_minerva_path(path);
     if (!std::filesystem::exists(minerva_entry_path))
     {
+
+        std::cerr << "fgetattr(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
 
@@ -207,6 +211,7 @@ void decode_to_temp(const char* path);
         std::string minerva_entry_temp_path = get_minerva_temp_path(path);
         if (!std::filesystem::exists(minerva_entry_temp_path))
         {
+            std::cerr << "access(" << path << "): Could not find file" << std::endl;
             return -ENOENT;
         }
         return 0;
@@ -239,6 +244,7 @@ void decode_to_temp(const char* path);
     }
     std::cout << "minerva_create(" << path << "): Successfully opened temp file" << minerva_entry_temp_path << " (" <<  file_handle  << ")" << std::endl;
     fi->fh = file_handle;
+    //close(file_handle);
     return 0;
 }
 
@@ -265,6 +271,7 @@ void decode_to_temp(const char* path);
     }
     else
     {
+        std::cerr << "minerva_open(" << path << "): Could not find file -> -ENOENT" << std::endl;
         return -ENOENT;
     }
 
@@ -434,10 +441,12 @@ void decode_to_temp(const char* path);
     std::string minerva_entry_path = get_minerva_path(path);
     if (std::filesystem::is_directory(minerva_entry_path))
     {
+        std::cerr << "truncate(" << path << "): path points to a directory" << std::endl;
         return -EISDIR;
     }
     if (!std::filesystem::exists(minerva_entry_path))
     {
+        std::cerr << "truncate(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
 
@@ -575,6 +584,7 @@ void decode_to_temp(const char* path);
 
     if (!std::filesystem::exists(path))
     {
+        std::cerr << "readdir(" << path << "): Could not find directory" << std::endl;
         return -ENOENT;
     }
 
@@ -601,6 +611,7 @@ void decode_to_temp(const char* path);
     std::string minerva_temp_path = get_minerva_temp_path(path);
     if (!std::filesystem::exists(minerva_entry_path) && !std::filesystem::exists(minerva_temp_path))
     {
+        std::cerr << "flush(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
     (void) fi;
@@ -611,6 +622,7 @@ void decode_to_temp(const char* path);
     std::string source = get_minerva_path(from);
     if (!std::filesystem::exists(source))
     {
+        std::cerr << "rename(" << from << ", " << to << "): Could not find file" << std::endl;
         return -ENOENT;
     }
     //Need to determine whether `to` is a file or a directory
@@ -627,6 +639,7 @@ void decode_to_temp(const char* path);
     std::string entry_path = get_minerva_path(path);
     if (!std::filesystem::exists(entry_path))
     {
+        std::cerr << "unlink(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
     if (unlink(entry_path.c_str()) == -1) {
@@ -643,6 +656,7 @@ void decode_to_temp(const char* path);
         minerva_entry = get_minerva_temp_path(path);
         if (!std::filesystem::exists(minerva_entry))
         {
+            std::cerr << "utimens(" << path << "): Could not find file" << std::endl;
             return -ENOENT;
         }
     }
