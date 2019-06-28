@@ -217,11 +217,24 @@ void decode_to_temp(const char* path);
 
 /*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
+    std::string minerva_entry_path = get_minerva_path(path);
+    std::cout << "minerva_create(" << path << "): Checking if " << minerva_entry_path  << " exists" << std::endl;
+    if (std::filesystem::exists(minerva_entry_path))
+    {
+        if (std::filesystem::is_directory(minerva_entry_path))
+        {
+            std::cerr << "minerva_create(" << path << "): Points to an existing directory" << std::endl;
+            return -EISDIR;
+        }
+        std::cerr << "minerva_create(" << path << "): Points to an existing file" << std::endl;
+        return -EEXIST;
+    }
     std::string minerva_entry_temp_path = get_minerva_temp_path(path);
     std::cout << "minerva_create(" << path << "): About to open temp file (" << minerva_entry_temp_path  << ")" << std::endl;
     int file_handle = open(minerva_entry_temp_path.c_str(), fi->flags, mode);
     if (file_handle == -1)
     {
+        std::cerr << "minerva_create(" << path << "): Could not open temp file" << minerva_entry_temp_path << std::endl;
         return -errno;
     }
     std::cout << "minerva_create(" << path << "): Successfully opened temp file" << minerva_entry_temp_path << " (" <<  file_handle  << ")" << std::endl;
@@ -252,17 +265,7 @@ void decode_to_temp(const char* path);
     }
     else
     {
-        std::cout << "minerva_open(" << path << "): Will create new file if flag is set (" << minerva_entry_path << ")"  << std::endl;
-        // Open a new empty file if create flag is on
-        if (fi->flags & O_CREAT)
-        {
-            std::cout << "O_CREAT  : " << O_CREAT << std::endl;
-            std::cout << "fi->flags: " << fi->flags << std::endl;
-            std::cout << "minerva_open(" << path << "): Flaf is set for creation (" << minerva_entry_path << "): " << std::endl;
-            res = open(minerva_entry_temp_path.c_str(), fi->flags);   
-        } else {
-            return -ENOENT;
-        }
+        return -ENOENT;
     }
 
     if (res == -1)
