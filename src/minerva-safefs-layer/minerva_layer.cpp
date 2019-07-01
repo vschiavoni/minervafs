@@ -95,12 +95,18 @@ void set_file_format(int file_format)
 bool temp_file_exists(const std::string& filename);
 
 /**
- * Encodes a file from temporary storage to temporary storage
+ * Encodes a file from temporary storage to permanent storage
  * @param path Path to file as seen on the mountpoint
- * @return 0 If the encoding went right, -errno otherwise
+ * @return 0 If the encoding went fine, -errno otherwise
  */
 int encode(const char* path);
-void decode_to_temp(const char* path);
+
+/**
+ * Decodes a file from permanent storage to temporary storage
+ * @param path Path to file as seen on the mountpoint
+ * @return 0 If the decoding went fine, -1 otherwise
+ */
+int decode(const char* path);
 
 
 
@@ -251,7 +257,7 @@ void decode_to_temp(const char* path);
     {
         std::cout << "minerva_open(" << path << "): Found coded file (" << minerva_entry_path << ")"  << std::endl;
         //Decode existing file in temp directory
-        decode_to_temp(path);
+        decode(path);
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
     else
@@ -869,7 +875,7 @@ int encode(const char* path)
 
 }
 
-void decode_to_temp(const char* path)
+int decode(const char* path)
 {
     std::string minerva_entry_path = get_minerva_path(path);
     std::string minerva_entry_temp_path = get_minerva_temp_path(path);
@@ -879,5 +885,10 @@ void decode_to_temp(const char* path)
     codes::code_params params = extract_code_params(coded_data.coding_configuration);
     codewrapper::CodeWrapper coder(params);
     tartarus::model::raw_data data = coder.decode_data(coded_data);
-    tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
+    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data))
+    {
+        std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
+        return -1;
+    }
+    return 0;
 }
