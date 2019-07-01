@@ -504,15 +504,23 @@ void decode_to_temp(const char* path);
         return -errno;
     }
         
-    std::cout << "minerva_mknod(" << path << "): " << "I am in end of mknode";
+    std::cout << "minerva_mknod(" << path << "): " << "I am in end of mknode" << std::endl;
     return 0;
 }
 
 /*static*/ int minerva_mkdir(const char *path, mode_t mode)
 {
+    std::cout << "minerva_mkdir(" << path << ")" << std::endl;
     std::string persistent_folder_path = get_minerva_path(path);
     if (mkdir(persistent_folder_path.c_str(), mode) == -1)
     {
+        std::cout << "minerva_mkdir(" << path << "): Could not create permanent directory (" << persistent_folder_path << ")" << std::endl;
+        return -errno;
+    }
+    std::string temporary_folder_path = get_minerva_temp_path(path);
+    if (mkdir(temporary_folder_path.c_str(), mode) == -1)
+    {
+        std::cout << "minerva_mkdir(" << path << "): Could not create temporary directory (" << temporary_folder_path << ")" << std::endl;
         return -errno;
     }
     return 0;
@@ -537,25 +545,38 @@ void decode_to_temp(const char* path);
 // TODO: update to open sub dirs
 /*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi)
 {
-    int res;
+    std::string minerva_entry_path = get_minerva_path(path);
+    std::cout << "opendir(" << path << "): " << minerva_entry_path << std::endl;
+    if (!std::filesystem::exists(minerva_entry_path))
+    {
+        std::cerr << "opendir(" << path << "): Could not find entry (" << minerva_entry_path << ")" << std::endl;
+        return -ENOENT;
+    }
+    if (!std::filesystem::is_directory(minerva_entry_path))
+    {
+        std::cerr << "opendir(" << path << "): " << minerva_entry_path << " is not a directory" << std::endl;
+        return -ENOTDIR;
+    }
     struct minerva_dirp* dirp = (minerva_dirp*) malloc(sizeof(struct minerva_dirp));
     if (dirp == NULL)
     {
+        std::cerr << "opendir(" << path << "): -ENOMEM" << std::endl;
         return -ENOMEM;
     }
 
-    dirp->dp = opendir(path);
+    dirp->dp = opendir(minerva_entry_path.c_str());
     if (dirp->dp == NULL)
     {
-        res = -errno;
         free(dirp);
-        return res;
+        std::cerr << "opendir(" << path << "): -" << errno << std::endl;
+        return -errno;
     }
 
     dirp->offset = 0;
     dirp->entry = NULL;
 
     fi->fh = (unsigned long) dirp;
+    std::cout << "opendir(" << path << "): Done" << std::endl;
     return 0;
 }
 
@@ -566,17 +587,23 @@ void decode_to_temp(const char* path);
 {
     (void) offset;
     (void) fi;
+    std::string minerva_entry_path = get_minerva_path(path);
+    std::cout << "readdir(" << path << "): " << minerva_entry_path << std::endl;
 
-    if (!std::filesystem::exists(path))
+    if (!std::filesystem::exists(minerva_entry_path))
     {
-        std::cerr << "readdir(" << path << "): Could not find directory" << std::endl;
+        std::cerr << "readdir(" << path << "): Could not find entry" << std::endl;
         return -ENOENT;
+    }
+
+    if (!std::filesystem::is_directory(minerva_entry_path))
+    {
+        std::cerr << "readdir(" << path << "): " << minerva_entry_path << " is not a directory" << std::endl;
+        return -ENOTDIR;
     }
 
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
-
-    std::string minerva_entry_path = get_minerva_path(path);
 
     for (const auto& entry : std::filesystem::directory_iterator(minerva_entry_path))
     {
