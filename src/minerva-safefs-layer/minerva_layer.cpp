@@ -99,8 +99,6 @@ void set_file_format(int file_format)
     }
 }
 
-bool temp_file_exists(const std::string& filename);
-
 /**
  * Encodes a file from temporary storage to permanent storage
  * @param path Path to file as seen on the mountpoint
@@ -852,13 +850,6 @@ void set_file_format(minerva::file_format file_format)
 {
     used_file_format = file_format;
 }
-
-bool temp_file_exists(const std::string& filename)
-{
-    std::string minerva_entry_temp_path = USER_HOME + minervafs_root_folder + minervafs_temp + "/" + filename;
-    return std::filesystem::exists(minerva_entry_temp_path);
-}
-
 
 int encode(const char* path)
 {
