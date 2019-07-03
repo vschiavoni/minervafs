@@ -59,6 +59,8 @@ struct minerva_dirp
 /*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi);
 
+/*static*/ int minerva_rmdir(const char *path);
+
 /*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi);
 
 /*static*/ int minerva_release(const char* path, struct fuse_file_info *fi);

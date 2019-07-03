@@ -616,6 +616,43 @@ int decode(const char* path);
     return 0;
 }
 
+/*static*/ int minerva_rmdir(const char *path)
+{
+    std::string permanent_path = get_permanent_path(path);
+    std::string temporary_path = get_temporary_path(path);
+    if (!std::filesystem::exists(temporary_path))
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Could not find entry in temporary storage" << std::endl;
+        return -ENOENT;
+    }
+    if (!std::filesystem::exists(permanent_path))
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Could not find entry in permanent storage" << std::endl;
+        return -ENOENT;
+    }
+    if (!std::filesystem::is_directory(temporary_path))
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Is not a directory in temporary storage" << std::endl;
+        return -ENOTDIR;
+    }
+    if (!std::filesystem::is_directory(permanent_path))
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Is not a directory in permanent storage" << std::endl;
+        return -ENOTDIR;
+    }
+    if (rmdir(temporary_path.c_str()) == -1)
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Could not rmdir temporary directory" << std::endl;
+        return -errno;
+    }
+    if (rmdir(permanent_path.c_str()) == -1)
+    {
+        std::cerr << "minerva_rmdir(" << path << "): Could not rmdir permanent directory" << std::endl;
+        return -errno;
+    }
+    return 0;
+}
+
 /*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi) {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_temp_path = get_temporary_path(path);
