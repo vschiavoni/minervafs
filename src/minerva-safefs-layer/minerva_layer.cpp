@@ -64,6 +64,17 @@ std::string get_permanent_path(const char* path);
  */
 std::string get_temporary_path(const char* path);
 
+/**
+ * Compute path to a file relative the minerva storage
+ * @param path Path to file as seen on the mountpoint
+ * @return Path to the file inside of the minerva storage folder (without the base directory)
+ */
+std::string get_minerva_relative_path(const char* path);
+
+/**
+ * Compute path of user's home directory
+ * @return Path to the home directry
+ */
 std::string get_user_home();
 
 time_t get_mtime(const std::string path);
@@ -297,19 +308,7 @@ int decode(const char* path);
     (void) fi;
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
-
-        std::cout << "finding json bug" << std::endl;
-        tartarus::model::coded_data coded_data = minerva_storage.load(filename);
-        std::cout << "lol" << std::endl;
-
-        codes::code_params params = extract_code_params(coded_data.coding_configuration);
-        codewrapper::CodeWrapper coder(params);
-
-        tartarus::model::raw_data data = coder.decode_data(coded_data);
-
-
-
-        tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
+        decode(path);
     }
 
 
@@ -355,14 +354,7 @@ int decode(const char* path);
         //Decode from permanent storage into temp directory
         //TODO refactor in its own function as it might be reused in the read function
         std::cout << "minerva_write(" << path << "): Decoding " << minerva_entry_path  <<  " into " << minerva_entry_temp_path << "" << std::endl;
-        
-        std::string filename = std::filesystem::path(path).filename().string();
-        tartarus::model::coded_data coded_data = minerva_storage.load(filename);
-        codes::code_params params = extract_code_params(coded_data.coding_configuration);
-        codewrapper::CodeWrapper coder(params);
-        tartarus::model::raw_data data = coder.decode_data(coded_data);
-        tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
-        
+        decode(path);
         std::cout << "minerva_write(" << path << "): Coded file decoded in temp directory" << std::endl;
     }
 
@@ -392,6 +384,7 @@ int decode(const char* path);
     (void) fi;
 
     std::string minerva_entry_path = get_permanent_path(path);
+    std::cout << "minerva_release(" << path << "): " << minerva_entry_path << std::endl;
     
     if (std::filesystem::is_directory(minerva_entry_path))
     {
@@ -459,15 +452,7 @@ int decode(const char* path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
-
-        tartarus::model::coded_data coded_data = minerva_storage.load(minerva_entry_path);
-
-        codes::code_params params = extract_code_params(coded_data.coding_configuration);
-        codewrapper::CodeWrapper coder(params);
-
-        tartarus::model::raw_data data = coder.decode_data(coded_data);
-
-        tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data);
+        decode(path);
     }
 
     if (truncate(minerva_entry_temp_path.c_str(), size) == -1)
@@ -521,17 +506,19 @@ int decode(const char* path);
 
 /*static*/ int minerva_mkdir(const char *path, mode_t mode)
 {
-    std::cout << "minerva_mkdir(" << path << ")" << std::endl;
+    std::cout << "mkdir(" << path << ")" << std::endl;
     std::string persistent_folder_path = get_permanent_path(path);
+    std::cout << "mkdir(" << path << "): Making directory in permanent folder(" << persistent_folder_path << ")" << std::endl;
     if (mkdir(persistent_folder_path.c_str(), mode) == -1)
     {
-        std::cout << "minerva_mkdir(" << path << "): Could not create permanent directory (" << persistent_folder_path << ")" << std::endl;
+        std::cerr << "mkdir(" << path << "): Could not create permanent directory (" << persistent_folder_path << ")" << std::endl;
         return -errno;
     }
     std::string temporary_folder_path = get_temporary_path(path);
+    std::cout << "mkdir(" << path << "): Making directory in temp folder(" << temporary_folder_path << ")" << std::endl;
     if (mkdir(temporary_folder_path.c_str(), mode) == -1)
     {
-        std::cout << "minerva_mkdir(" << path << "): Could not create temporary directory (" << temporary_folder_path << ")" << std::endl;
+        std::cerr << "mkdir(" << path << "): Could not create temporary directory (" << temporary_folder_path << ")" << std::endl;
         return -errno;
     }
     return 0;
@@ -788,8 +775,16 @@ std::string get_permanent_path(const char* path)
  */
 std::string get_temporary_path(const char* path)
 {
-    std::string filename = std::filesystem::path(path).filename().string();
-    return get_user_home() + minervafs_root_folder + minervafs_temp + "/" + filename;
+    std::string internal_path(path);
+    return get_user_home() + minervafs_root_folder + minervafs_temp + "/" + internal_path.substr(1);
+}
+
+std::string get_minerva_relative_path(const char* path)
+{
+    std::string permanent_path = get_permanent_path(path);
+    std::string root_folder = std::filesystem::path(get_user_home() + "/" + minervafs_root_folder).string();
+    std::string relative_path = "/" + permanent_path.substr(root_folder.length());
+    return relative_path;
 }
 
 std::string get_user_home()
@@ -859,13 +854,14 @@ int encode(const char* path)
 
     codes::code_params code_param = get_code_params(file_size);
     codewrapper::CodeWrapper code(code_param);
-    std::string filename = (std::filesystem::path(path)).filename().string();
+    std::string filename = get_minerva_relative_path(path);
     std::string mime_type = "TODO"; // TODO: Change;
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
     tartarus::model::coded_data coded = code.encode_data(raw);
 
     if (!minerva_storage.store(coded))
     {
+        std::cerr << "encode(" << path << "): Did not store file provided" << std::endl;
         return -errno;
     }
     assert(unlink(minerva_entry_temp_path.c_str()) == 0);
@@ -877,7 +873,7 @@ int decode(const char* path)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
-    std::string filename = std::filesystem::path(path).filename().string();
+    std::string filename = get_minerva_relative_path(path);
 
     tartarus::model::coded_data coded_data = minerva_storage.load(filename);
     codes::code_params params = extract_code_params(coded_data.coding_configuration);
