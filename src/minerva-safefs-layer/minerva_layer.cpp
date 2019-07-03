@@ -251,7 +251,6 @@ int decode(const char* path);
     }
     std::cout << "minerva_create(" << path << "): Successfully opened temp file" << minerva_entry_temp_path << " (" <<  file_handle  << ")" << std::endl;
     fi->fh = file_handle;
-    //close(file_handle);
     return 0;
 }
 
@@ -311,8 +310,7 @@ int decode(const char* path);
         decode(path);
     }
 
-
-    fd = open(minerva_entry_temp_path.c_str(), O_RDONLY);
+    fd = fi->fh;
 
     if (fd == -1)
     {
@@ -326,7 +324,6 @@ int decode(const char* path);
         res = -errno;
     }
 
-    close(fd);
     return res;
 }
 
@@ -358,7 +355,6 @@ int decode(const char* path);
         std::cout << "minerva_write(" << path << "): Coded file decoded in temp directory" << std::endl;
     }
 
-    //int fd = open(minerva_entry_temp_path.c_str(), O_WRONLY);
     int fd = fi->fh;
     // If we are unable to open a file we return an error
     if (fd == -1)
@@ -374,7 +370,6 @@ int decode(const char* path);
         res = -errno;
     }
 
-    close(fd);
     return res;
 }
 
@@ -404,7 +399,11 @@ int decode(const char* path);
         }
         return 0;
     }
-
+    if (fi->fh && close(fi->fh) == -1)
+    {
+        std::cerr << "minerva_release(" << path << "): Could not close file descriptor (fd=" << fi->fh << ")" << std::endl;
+        return -errno;
+    }
     return encode(path);
 }
 
