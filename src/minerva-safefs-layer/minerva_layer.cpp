@@ -901,7 +901,6 @@ int encode(const char* path)
         std::cerr << "encode(" << path << "): Did not store file provided" << std::endl;
         return -errno;
     }
-    assert(unlink(minerva_entry_temp_path.c_str()) == 0);
     return 0;
 
 }
