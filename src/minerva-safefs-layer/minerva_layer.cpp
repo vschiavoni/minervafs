@@ -77,6 +77,13 @@ std::string get_minerva_relative_path(const char* path);
  */
 std::string get_user_home();
 
+/**
+ * Tests whether a flag combination implies that the file is open for modification
+ * @param flags Combination of flags to test
+ * @return true if the flags are set for modification, false otherwise
+ */
+static bool is_flagged_for_modification(int flags);
+
 time_t get_mtime(const std::string path);
 
 codes::code_params get_code_params(size_t file_size);
@@ -373,22 +380,18 @@ int decode(const char* path);
     return res;
 }
 
-
 /*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
 {
-    (void) fi;
-
+    // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
-    std::cout << "minerva_release(" << path << "): " << minerva_entry_path << std::endl;
-    
     if (std::filesystem::is_directory(minerva_entry_path))
     {
         std::cerr << "minerva_release(" << path << "): " << path << " is a directory" << std::endl;
-        return 0;
+        return -EISDIR;
     }
 
+    // Check if path points to a non existing file or closed file
     std::string minerva_entry_temp_path = get_temporary_path(path);
-    
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
         std::cerr << "minerva_release(" << path << "): Cannot find temporary entry for " << path << std::endl;
@@ -399,12 +402,27 @@ int decode(const char* path);
         }
         return 0;
     }
+
+    // Close file descriptor
     if (fi->fh && close(fi->fh) == -1)
     {
         std::cerr << "minerva_release(" << path << "): Could not close file descriptor (fd=" << fi->fh << ")" << std::endl;
         return -errno;
     }
-    return encode(path);
+
+    // If file was open for modifications, encode it and let encode function take care of unlinking the decided file in temporary storage
+    if (is_flagged_for_modification(fi->flags))
+    {
+        return encode(path);
+    }
+
+    // If file was not open for modifications, simply unlink the decoded file in temporary storage
+    if (unlink(minerva_entry_temp_path.c_str()) == -1)
+    {
+        std::cerr << "minerva_release(" << path << "): Could not unlink temporary file (" << minerva_entry_temp_path << ")" << std::endl;
+        return -errno;
+    }
+    return 0;
 }
 
 // TODO: update as needed
@@ -920,4 +938,15 @@ int decode(const char* path)
         return -1;
     }
     return 0;
+}
+
+static bool is_flagged_for_modification(int flags)
+{
+    return  ((flags & O_WRONLY) == O_WRONLY)   ||
+            ((flags & O_RDWR) == O_RDWR)       ||
+            ((flags & O_EXCL) == O_EXCL)       ||
+            ((flags & O_APPEND) == O_APPEND)   ||
+            ((flags & O_CREAT) == O_CREAT)     ||
+            ((flags & O_TMPFILE) == O_TMPFILE) ||
+            ((flags & O_TRUNC) == O_TRUNC);
 }
