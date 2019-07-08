@@ -451,30 +451,35 @@ int decode(const char* path);
     8. Delete temp file
     */
 
-
-    std::string minerva_entry_path = get_permanent_path(path);
-    if (std::filesystem::is_directory(minerva_entry_path))
+    std::string permanent_path = get_permanent_path(path);
+    if (std::filesystem::is_directory(permanent_path))
     {
         std::cerr << "truncate(" << path << "): path points to a directory" << std::endl;
         return -EISDIR;
     }
-    if (!std::filesystem::exists(minerva_entry_path))
+    std::string minerva_entry_temp_path = get_temporary_path(path);
+    size_t actual_file_size = 0;
+    if (std::filesystem::exists(minerva_entry_temp_path))
+    {
+        actual_file_size = std::filesystem::file_size(minerva_entry_temp_path);
+    }
+    else if (std::filesystem::exists(permanent_path))
+    {
+        nlohmann::json obj = tartarus::readers::msgpack_reader(permanent_path);
+        actual_file_size = obj["file_size"].get<size_t>();
+    }
+    else
     {
         std::cerr << "truncate(" << path << "): Could not find file" << std::endl;
         return -ENOENT;
     }
 
-
-    nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
-    size_t actual_file_size = obj["file_size"].get<size_t>();
     size_t size = static_cast<size_t>(length);
     if (size == actual_file_size)
     {
         return 0;
     }
 
-
-    std::string minerva_entry_temp_path = get_temporary_path(path);
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
         decode(path);
