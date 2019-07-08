@@ -269,12 +269,13 @@ int decode(const char* path);
 
     int res;
 
-    //FIXME check whether open flags are set to create empty file
+    // Check if the file is decoded in temporary storage
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
         std::cout << "minerva_open(" << path << "): Found temp file (" << minerva_entry_temp_path << ")"  << std::endl;
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
+    // Check if the file is coded in permanent storage
     else if (std::filesystem::exists(minerva_entry_path))
     {
         std::cout << "minerva_open(" << path << "): Found coded file (" << minerva_entry_path << ")"  << std::endl;
@@ -282,6 +283,13 @@ int decode(const char* path);
         decode(path);
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
+    // Check if flags are set for creation
+    else if (is_flagged_for_modification(fi->flags))
+    {
+        std::cout << "minerva_open(" << path << "): flags are set for creation" << std::endl;
+        res = minerva_create(path, 0644, fi);
+    }
+    //The file cannot be found
     else
     {
         std::cerr << "minerva_open(" << path << "): Could not find file -> -ENOENT" << std::endl;
