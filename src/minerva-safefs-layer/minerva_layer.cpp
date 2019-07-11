@@ -145,7 +145,6 @@ int decode(const char* path);
 
 /*static*/ int minerva_getattr(const char* path, struct stat* stbuf)
 {
-    std::cout << "getattr(" << path << ")" << std::endl;
     int res = 0;
 
     // Check if the file is decoded in the temp directory
@@ -197,12 +196,10 @@ int decode(const char* path);
     
     std::string filename = std::filesystem::path(minerva_entry_path).filename().string();
     size_t size = std::filesystem::file_size(minerva_entry_path);
-    std::cout << "\tsize = " << size << std::endl;
     if (size != 0)
     {
         nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
         size = obj["file_size"].get<size_t>();
-        std::cout << "\tunpacked size:" << size << std::endl;
     }
     stbuf->st_size = size;
 
@@ -237,7 +234,6 @@ int decode(const char* path);
 /*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
-    std::cout << "minerva_create(" << path << "): Checking if " << minerva_entry_path  << " exists" << std::endl;
     if (std::filesystem::exists(minerva_entry_path))
     {
         if (std::filesystem::is_directory(minerva_entry_path))
@@ -249,14 +245,12 @@ int decode(const char* path);
         return -EEXIST;
     }
     std::string minerva_entry_temp_path = get_temporary_path(path);
-    std::cout << "minerva_create(" << path << "): About to open temp file (" << minerva_entry_temp_path  << ")" << std::endl;
     int file_handle = open(minerva_entry_temp_path.c_str(), fi->flags, mode);
     if (file_handle == -1)
     {
         std::cerr << "minerva_create(" << path << "): Could not open temp file" << minerva_entry_temp_path << std::endl;
         return -errno;
     }
-    std::cout << "minerva_create(" << path << "): Successfully opened temp file" << minerva_entry_temp_path << " (" <<  file_handle  << ")" << std::endl;
     fi->fh = file_handle;
     return 0;
 }
@@ -272,13 +266,11 @@ int decode(const char* path);
     // Check if the file is decoded in temporary storage
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
-        std::cout << "minerva_open(" << path << "): Found temp file (" << minerva_entry_temp_path << ")"  << std::endl;
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
     }
     // Check if the file is coded in permanent storage
     else if (std::filesystem::exists(minerva_entry_path))
     {
-        std::cout << "minerva_open(" << path << "): Found coded file (" << minerva_entry_path << ")"  << std::endl;
         //Decode existing file in temp directory
         decode(path);
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
@@ -286,7 +278,6 @@ int decode(const char* path);
     // Check if flags are set for creation
     else if (is_flagged_for_modification(fi->flags))
     {
-        std::cout << "minerva_open(" << path << "): flags are set for creation" << std::endl;
         res = minerva_create(path, 0644, fi);
     }
     //The file cannot be found
@@ -310,7 +301,6 @@ int decode(const char* path);
 
 
     std::string minerva_entry_path = get_permanent_path(path);
-    std::cout << "read path " << minerva_entry_path << std::endl;
     std::string filename = std::filesystem::path(path).filename().string();
 
     std::string minerva_entry_temp_path = get_temporary_path(path);
@@ -348,33 +338,28 @@ int decode(const char* path);
                          struct fuse_file_info* fi)
 {
     (void) fi;
-    std::cout << "minerva_write(" << path << ")" << std::endl;
     std::string minerva_entry_temp_path = get_temporary_path(path);
     std::string minerva_entry_path = get_permanent_path(path);
     
     //Check if the file is currently decoded in temp directory
     if (!std::filesystem::exists(minerva_entry_temp_path))
     {
-
-        std::cout << "minerva_write(" << path << "): Cannot find temp entry (" << minerva_entry_temp_path << ")" << std::endl;
         //Check if the file exists in permanent storage
         if (!std::filesystem::exists(minerva_entry_path))
         {
-            std::cout << "minerva_write(" << path << "): Cannot find entry (" << minerva_entry_path << ")" << std::endl;
+            std::cerr << "minerva_write(" << path << "): Cannot find entry (" << minerva_entry_path << ")" << std::endl;
             return -ENOENT;
         }
         //Decode from permanent storage into temp directory
         //TODO refactor in its own function as it might be reused in the read function
-        std::cout << "minerva_write(" << path << "): Decoding " << minerva_entry_path  <<  " into " << minerva_entry_temp_path << "" << std::endl;
         decode(path);
-        std::cout << "minerva_write(" << path << "): Coded file decoded in temp directory" << std::endl;
     }
 
     int fd = fi->fh;
     // If we are unable to open a file we return an error
     if (fd == -1)
     {
-        std::cout << "minerva_write(" << path << "): Cannot open temp entry (" << minerva_entry_temp_path  << ")" << std::endl;
+        std::cerr << "minerva_write(" << path << "): Cannot open temp entry (" << minerva_entry_temp_path  << ")" << std::endl;
         return -errno;
     }
 
@@ -502,7 +487,6 @@ int decode(const char* path);
 // Make items
 /*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-    std::cout << "minerva_mknod(" << path << ")" << std::endl;
     int res;
 
     std::string persistent_entry_path = get_permanent_path(path);
@@ -529,23 +513,18 @@ int decode(const char* path);
     {
         return -errno;
     }
-        
-    std::cout << "minerva_mknod(" << path << "): " << "I am in end of mknode" << std::endl;
     return 0;
 }
 
 /*static*/ int minerva_mkdir(const char *path, mode_t mode)
 {
-    std::cout << "mkdir(" << path << ")" << std::endl;
     std::string persistent_folder_path = get_permanent_path(path);
-    std::cout << "mkdir(" << path << "): Making directory in permanent folder(" << persistent_folder_path << ")" << std::endl;
     if (mkdir(persistent_folder_path.c_str(), mode) == -1)
     {
         std::cerr << "mkdir(" << path << "): Could not create permanent directory (" << persistent_folder_path << ")" << std::endl;
         return -errno;
     }
     std::string temporary_folder_path = get_temporary_path(path);
-    std::cout << "mkdir(" << path << "): Making directory in temp folder(" << temporary_folder_path << ")" << std::endl;
     if (mkdir(temporary_folder_path.c_str(), mode) == -1)
     {
         std::cerr << "mkdir(" << path << "): Could not create temporary directory (" << temporary_folder_path << ")" << std::endl;
@@ -574,7 +553,6 @@ int decode(const char* path);
 /*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
-    std::cout << "opendir(" << path << "): " << minerva_entry_path << std::endl;
     if (!std::filesystem::exists(minerva_entry_path))
     {
         std::cerr << "opendir(" << path << "): Could not find entry (" << minerva_entry_path << ")" << std::endl;
@@ -604,7 +582,6 @@ int decode(const char* path);
     dirp->entry = NULL;
 
     fi->fh = (unsigned long) dirp;
-    std::cout << "opendir(" << path << "): Done" << std::endl;
     return 0;
 }
 
@@ -616,7 +593,6 @@ int decode(const char* path);
     (void) offset;
     (void) fi;
     std::string minerva_entry_path = get_permanent_path(path);
-    std::cout << "readdir(" << path << "): " << minerva_entry_path << std::endl;
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
