@@ -672,18 +672,36 @@ int decode(const char* path);
 }
 
 /*static*/ int minerva_rename(const char* from, const char* to) {
-    std::string source = get_permanent_path(from);
+    std::string source = get_temporary_path(from);
+    std::string destination = get_temporary_path(to);
+
     if (!std::filesystem::exists(source))
     {
-        std::cerr << "rename(" << from << ", " << to << "): Could not find file" << std::endl;
-        return -ENOENT;
+        source = get_permanent_path(from);
+        if (!std::filesystem::exists(source))
+        {
+            std::cerr << "rename(" << from << ", " << to << "): Could not find entry (" << from << ")" << std::endl;
+            return -ENOENT;
+        }
+        destination = get_permanent_path(to);
+        if (rename(source.c_str(), destination.c_str()) == -1)
+        {
+            return -errno;
+        }
+        return 0;
     }
-    //Need to determine whether `to` is a file or a directory
-    std::string destination = get_permanent_path(to);
+
     if (rename(source.c_str(), destination.c_str()) == -1)
     {
         return -errno;
     }
+    source = get_permanent_path(from);
+    destination = get_permanent_path(to);
+    if (rename(source.c_str(), destination.c_str()) == -1)
+    {
+        return -errno;
+    }
+
     return 0;
 }
 
