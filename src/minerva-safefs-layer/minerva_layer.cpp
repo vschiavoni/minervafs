@@ -38,7 +38,7 @@ static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
-static const std::vector<std::string> IGNORE = {".basis", ".identifiers", ".minervafs_config", ".registry", ".temp"};
+static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 
 static std::string USER_HOME = "";
 
@@ -800,14 +800,17 @@ void setup()
         std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
     }
 
+    nlohmann::json indexing_config;
+    indexing_config["indexing_path"] = (USER_HOME + minervafs_root_folder + "/.indexing");
+    indexing_config["max_memory_consumption"] = 8192; // Max memory in MB
+    
     nlohmann::json minerva_config;
 
-    minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + "/.identifiers");
-    minerva_config["base_register_path"] =  (USER_HOME + minervafs_root_folder + minervafs_registry);
-    minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);;
-    minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");
-    minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM;
+    minerva_config["fileout_path"] = (USER_HOME + minervafs_root_folder + "/");
     minerva_config["file_format"] = used_file_format;
+
+    minerva_config["indexing_config"] = indexing_config;
+    
     // minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + minervafs_identifier_register); // string
     // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string
     // minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);        // string
