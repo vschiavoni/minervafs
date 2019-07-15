@@ -801,7 +801,7 @@ void setup()
     }
 
     nlohmann::json indexing_config;
-    indexing_config["indexing_config"] = (USER_HOME + minervafs_root_folder + "/.indexing");
+    indexing_config["indexing_path"] = (USER_HOME + minervafs_root_folder + "/.indexing");
     indexing_config["max_memory_consumption"] = 8192; // Max memory in MB
     
     nlohmann::json minerva_config;
