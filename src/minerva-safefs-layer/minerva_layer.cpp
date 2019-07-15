@@ -38,7 +38,7 @@ static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
-static const std::vector<std::string> IGNORE = {".basis", ".identifiers", ".minervafs_config", ".registry", ".temp"};
+static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 
 static std::string USER_HOME = "";
 
