@@ -55,7 +55,7 @@ def build(bld):
         includes='../src',
         source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
         lib = libs, 
-        use=['tartarus_includes', 'codewrapper_includes', 'codewrapper', 'minerva_includes',
+        use=['tartarus_includes', 'tartarus', 'codewrapper_includes', 'codewrapper', 'minerva_includes',
              'minerva', 'minerva-safefs-layer-includes']
     )
 
@@ -67,7 +67,7 @@ def build(bld):
         source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
         lib = libs,               
         link_flags=['-Wl', '--whole-archive'],
-        use=['tartarus_includes', 'codewrapper_includes', 'codewrapper_shared', 'minerva_includes',
+        use=['tartarus_includes', 'tartarus_shared', 'codewrapper_includes', 'codewrapper_shared', 'minerva_includes',
              'minerva' 'minerva-safefs-layer-includes']                          
     )                                                                  
     
