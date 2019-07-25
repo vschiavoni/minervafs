@@ -14,6 +14,8 @@ SafeFS is a software defined file system which is highly modular for reference s
 
 # Build 
 
+## First build
+
 Update the submodules to build the layer.
 
 ```bash
@@ -31,6 +33,11 @@ after first configuration
 ```bash 
 python waf build 
 ```
+
+## Build after a dependency upgrade
+
+1. Delete the `build` and the `.waf*` directories
+2. Run `waf configure build`
 
 ## Configuration 
 
