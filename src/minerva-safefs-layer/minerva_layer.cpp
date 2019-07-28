@@ -484,6 +484,36 @@ int decode(const char* path);
     return encode(path);
 }
 
+/*static*/ int minerva_chmod(const char* path, mode_t mode)
+{
+    //FIXME It should be possible to chmod files that are not yet in permanent storage
+    std::string temporary_path = get_temporary_path(path);
+    bool in_temporary_storage = std::filesystem::exists(temporary_path);
+    std::string permanent_path = get_permanent_path(path);
+    bool found_permanent = std::filesystem::exists(permanent_path);
+    if (!in_temporary_storage && !found_permanent)
+    {
+        std::cerr << "minerva_chmod(" << path << "): Could not find file" << std::endl;
+        return -ENOENT;
+    }
+    if (in_temporary_storage)
+    {
+        if (chmod(temporary_path.c_str(), mode) == -1)
+        {
+            return -errno;
+        }
+    }
+    if (found_permanent)
+    {
+        if (chmod(permanent_path.c_str(), mode) == -1)
+        {
+            return -errno;
+        }
+    }
+    return 0;
+}
+
+
 // Make items
 /*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
 {
