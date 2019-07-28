@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
     minerva_operations.mkdir = minerva_mkdir;
     minerva_operations.rmdir = minerva_rmdir;
     minerva_operations.truncate = minerva_truncate;
+    minerva_operations.chmod = minerva_chmod;
     minerva_operations.flush = minerva_flush;
     minerva_operations.rename = minerva_rename;
     minerva_operations.unlink = minerva_unlink;

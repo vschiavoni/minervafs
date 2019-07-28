@@ -43,6 +43,8 @@ struct minerva_dirp
 
 /*static*/ int minerva_truncate(const char *path, off_t size);
 
+/*static*/ int minerva_chmod(const char* path, mode_t mode);
+
 // Make items
 /*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev);
 
