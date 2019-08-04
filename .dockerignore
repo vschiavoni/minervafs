@@ -1,0 +1,6 @@
+build
+.git
+.lock-waf_linux_build
+resolved_dependencies
+resolve_symlinks
+.waf*
