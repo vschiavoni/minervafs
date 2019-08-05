@@ -8,8 +8,8 @@ RUN apt-get update && \
 
 # clang
 
-RUN echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
-    echo "deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | tee --append /etc/apt/sources.list.d/llvm.list && \
+RUN echo "deb http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
+    echo "deb-src http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" | tee --append /etc/apt/sources.list.d/llvm.list && \
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get update && \
     apt-get install clang-8 libclang-8-dev libclang-common-8-dev --yes --quiet && \
