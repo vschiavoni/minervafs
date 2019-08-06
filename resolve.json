@@ -12,7 +12,7 @@
         "sources": [
             "github.com/AgileCloudLab/tartarus.git"
         ],
-        "major": 6,
+        "major": 7,
         "method": "semver",
         "resolver": "git",
         "name": "tartarus"
@@ -30,7 +30,7 @@
         "name": "minerva",
         "resolver": "git",
         "method": "semver",
-        "major": 5,
+        "major": 6,
         "sources": ["github.com/AgileCloudLab/minerva.git"]
     }    
 ]
