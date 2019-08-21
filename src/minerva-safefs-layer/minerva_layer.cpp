@@ -136,7 +136,6 @@ int decode(const char* path);
 /*static*/ void* minerva_init(struct fuse_conn_info *conn)
 {
     (void) conn;
-    USER_HOME = get_user_home();
     setup();
     return 0;
 }
@@ -782,7 +781,7 @@ void setup()
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    std::string base_directory = USER_HOME + minervafs_root_folder;
+    std::string base_directory = get_user_home() + minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
     std::string temp_directory = base_directory + minervafs_temp;
     std::string indexing_directory = base_directory + "/.indexing";
@@ -832,7 +831,7 @@ void setup()
 std::string get_permanent_path(const char* path)
 {
     std::string internal_path(path);
-    return USER_HOME + minervafs_root_folder + "/" + internal_path.substr(1);
+    return get_user_home() + minervafs_root_folder + "/" + internal_path.substr(1);
 }
 
 /**
@@ -856,13 +855,14 @@ std::string get_minerva_relative_path(const char* path)
 
 std::string get_user_home()
 {
-    char* homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-    {
-        homedir = getpwuid(getuid())->pw_dir;
+    if (USER_HOME.empty()) {
+        char* homedir;
+        if ((homedir = getenv("HOME")) != NULL)
+        {
+            homedir = getpwuid(getuid())->pw_dir;
+        }
+        USER_HOME = std::string(homedir, strlen(homedir));
     }
-
-    USER_HOME = std::string(homedir, strlen(homedir));
     return USER_HOME;
 }
 
