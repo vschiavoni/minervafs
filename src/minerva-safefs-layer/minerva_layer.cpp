@@ -782,15 +782,18 @@ void setup()
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    std::string config_file_path = USER_HOME + minervafs_root_folder + minervafs_config;
+    std::string base_directory = USER_HOME + minervafs_root_folder;
+    std::string config_file_path = base_directory + minervafs_config;
+    std::string temp_directory = base_directory + minervafs_temp;
+    std::string indexing_directory = base_directory + "/.indexing";
 
     if ( std::filesystem::exists(config_file_path))
     {
         nlohmann::json config = tartarus::readers::json_reader(config_file_path);
         minerva_storage = minerva::minerva(config);
-        if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_temp))
+        if (!std::filesystem::exists(temp_directory))
         {
-            std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
+            std::system((MKDIR + " " + temp_directory).c_str());
         }
         return;
     }
@@ -799,56 +802,27 @@ void setup()
 
     // TODO add missing folder
 
-    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder))
+    if (!std::filesystem::exists(base_directory))
     {
-        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder).c_str());
+        std::system((MKDIR + " " + base_directory).c_str());
     }
 
-    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_basis_folder))
-    // {
-    //     std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_basis_folder).c_str());
-    // }
 
-    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_registry))
-    // {
-    //     std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_registry).c_str());
-    // }
-
-    // if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_identifier_register))
-    // {
-    //     std::system((TOUCH + " " + USER_HOME + minervafs_root_folder + minervafs_identifier_register).c_str());
-    // }
-
-    if (!std::filesystem::exists(USER_HOME + minervafs_root_folder + minervafs_temp))
+    if (!std::filesystem::exists(temp_directory))
     {
-        std::system((MKDIR + " " + USER_HOME + minervafs_root_folder + minervafs_temp).c_str());
+        std::system((MKDIR + " " + temp_directory).c_str());
     }
 
     nlohmann::json indexing_config;
-    indexing_config["indexing_path"] = (USER_HOME + minervafs_root_folder + "/.indexing");
+    indexing_config["indexing_path"] = (indexing_directory);
     
     nlohmann::json minerva_config;
-
-    minerva_config["fileout_path"] = (USER_HOME + minervafs_root_folder + "/");
+    minerva_config["fileout_path"] = (base_directory + "/");
     minerva_config["file_format"] = used_file_format;
-
     minerva_config["indexing_config"] = indexing_config;
-    
-    // minerva_config["register_path"] = (USER_HOME + minervafs_root_folder + minervafs_identifier_register); // string
-    // minerva_config["base_register_path"] = (USER_HOME + minervafs_root_folder + minervafs_registry);       // string
-    // minerva_config["base_out_path"] = (USER_HOME + minervafs_root_folder + minervafs_basis_folder);        // string
-    // minerva_config["out_path"] = (USER_HOME + minervafs_root_folder + "/");                                // string
-    // minerva_config["max_registry_size"] = 8589934592; // 8 GB of RAM
 
     minerva_storage = minerva::minerva(minerva_config);
     tartarus::writers::json_writer(config_file_path, minerva_config);
-
-
-//    minerva_storage = minerva::minerva(t_config);
-
-
-
-
 }
 
 ///
