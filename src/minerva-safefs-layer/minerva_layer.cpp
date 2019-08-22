@@ -75,7 +75,7 @@ std::string get_minerva_relative_path(const char* path);
  * Compute path of user's home directory
  * @return Path to the home directry
  */
-std::string get_user_home();
+inline std::string get_user_home();
 
 /**
  * Tests whether a flag combination implies that the file is open for modification
@@ -853,7 +853,7 @@ std::string get_minerva_relative_path(const char* path)
     return relative_path;
 }
 
-std::string get_user_home()
+inline std::string get_user_home()
 {
     if (USER_HOME.empty()) {
         char* homedir;
