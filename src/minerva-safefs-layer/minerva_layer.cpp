@@ -258,7 +258,6 @@ int decode(const char* path);
 {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
-    printf("minerva_open(%s) flags: %x\n", path, fi->flags);
 
     int res;
 
