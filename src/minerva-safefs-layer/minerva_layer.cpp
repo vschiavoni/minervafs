@@ -903,6 +903,17 @@ codes::code_params get_code_params(size_t file_size)
     return params;
 }
 
+static std::string stringify_code_params(codes::code_params params) {
+    std::string message = params.code_name +
+        ", n = " + std::to_string(params.n) +
+        ", k = " + std::to_string(params.k) +
+        ", m = " + std::to_string(params.m) +
+        ", mgf = " + std::to_string(params.mgf) +
+        ", d = " + std::to_string(params.d) +
+        ", r = " + std::to_string(params.r);
+    return message;
+}
+
 codes::code_params extract_code_params(nlohmann::json config)
 {
     codes::code_params params;
@@ -932,6 +943,7 @@ int encode(const char* path)
     std::string mime_type = "TODO"; // TODO: Change;
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
     tartarus::model::coded_data coded = code.encode_data(raw);
+    std::cout << "encode(" << path << "): "  << stringify_code_params(code_param) << std::endl;
 
     if (!minerva_storage.store(coded))
     {
