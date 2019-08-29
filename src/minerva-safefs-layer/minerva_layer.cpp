@@ -1,36 +1,29 @@
 #include "minerva_layer.hpp"
 
-#include <minerva/minerva.hpp>
-
-#include <codewrapper/codewrapper.hpp>
-
-#include <tartarus/model/raw_data.hpp>
-#include <tartarus/model/coded_data.hpp>
-#include <tartarus/model/coded_pair.hpp>
-#include <tartarus/readers.hpp>
-#include <tartarus/writers.hpp>
-
-
-
-#include <pwd.h>
-#include <unistd.h>
-
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include <dirent.h>
+#include <filesystem>
+#include <iostream> // REMEMBER TO REMOVE
+#include <string>
+#include <vector>
 
 #include <cmath>
 #include <cstring>
-#include <string>
 
+#include <dirent.h>
+#include <errno.h>
+#include <pwd.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include <vector>
+#include <codewrapper/codewrapper.hpp>
+#include <minerva/minerva.hpp>
+#include <tartarus/model/coded_data.hpp>
+#include <tartarus/model/coded_pair.hpp>
+#include <tartarus/model/raw_data.hpp>
+#include <tartarus/readers.hpp>
+#include <tartarus/writers.hpp>
 
-#include <filesystem>
-
-#include <iostream> // REMEMBER TO REMOVE
 
 static const std::string minervafs_root_folder = "/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
