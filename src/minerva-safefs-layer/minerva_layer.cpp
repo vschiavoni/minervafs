@@ -1,7 +1,11 @@
 #include "minerva_layer.hpp"
 
+#include <atomic>
 #include <filesystem>
 #include <iostream> // REMEMBER TO REMOVE
+#include <map>
+#include <mutex>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -36,7 +40,8 @@ static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config"
 static std::string USER_HOME = "";
 
 static minerva::minerva minerva_storage;
-
+static std::map<std::string, std::atomic_uint> open_files;
+static std::mutex of_mutex;
 static minerva::file_format used_file_format = minerva::file_format::JSON;
 
 // Helper functions
@@ -229,6 +234,35 @@ void minerva_destroy(void *private_data)
 
 }
 
+static void register_open_file(std::string path)
+{
+    std::lock_guard<std::mutex> lock(of_mutex);
+    auto entry = open_files.find(path);
+    if (entry != open_files.end())
+    {
+        entry->second++;
+    }
+    else
+    {
+        open_files[path] = 1;
+    }
+}
+
+static void register_closed_file(std::string path)
+{
+    std::lock_guard<std::mutex> lock(of_mutex);
+    auto entry = open_files.find(path);
+    if (entry == open_files.end())
+    {
+        throw new std::logic_error("Cannot find file that must be closed");
+    }
+    entry->second--;
+    if (entry->second == 0)
+    {
+        unlink(path.c_str());
+    }
+}
+
 /*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
@@ -249,6 +283,7 @@ void minerva_destroy(void *private_data)
         std::cerr << "minerva_create(" << path << "): Could not open temp file" << minerva_entry_temp_path << std::endl;
         return -errno;
     }
+    register_open_file(minerva_entry_temp_path);
     fi->fh = file_handle;
     return 0;
 }
@@ -264,6 +299,13 @@ void minerva_destroy(void *private_data)
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
+        if (res == -1)
+        {
+            return -errno;
+        }
+        register_open_file(minerva_entry_temp_path.c_str());
+        fi->fh = res;
+        return 0;
     }
     // Check if the file is coded in permanent storage
     else if (std::filesystem::exists(minerva_entry_path))
@@ -271,25 +313,29 @@ void minerva_destroy(void *private_data)
         //Decode existing file in temp directory
         decode(path);
         res = open(minerva_entry_temp_path.c_str(), fi->flags);
+        if (res == -1)
+        {
+            return -errno;
+        }
+        register_open_file(minerva_entry_temp_path.c_str());
+        fi->fh = res;
+        return 0;
     }
     // Check if flags are set for creation
     else if (is_flagged_for_modification(fi->flags))
     {
         res = minerva_create(path, 0644, fi);
+        if (res == -1)
+        {
+            return -errno;
+        }
+        register_open_file(minerva_entry_temp_path.c_str());
+        fi->fh = res;
+        return 0;
     }
     //The file cannot be found
-    else
-    {
-        std::cerr << "minerva_open(" << path << "): Could not find file -> -ENOENT" << std::endl;
-        return -ENOENT;
-    }
-
-    if (res == -1)
-    {
-        return -errno;
-    }
-    fi->fh = res;
-    return 0;
+    std::cerr << "minerva_open(" << path << "): Could not find file -> -ENOENT" << std::endl;
+    return -ENOENT;
 }
 
 /*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
@@ -403,14 +449,8 @@ void minerva_destroy(void *private_data)
     // If file was open for modifications, encode it and let encode function take care of unlinking the decided file in temporary storage
     if (is_flagged_for_modification(fi->flags))
     {
-        return encode(path);
-    }
-
-    // If file was not open for modifications, simply unlink the decoded file in temporary storage
-    if (unlink(minerva_entry_temp_path.c_str()) == -1)
-    {
-        std::cerr << "minerva_release(" << path << "): Could not unlink temporary file (" << minerva_entry_temp_path << ")" << std::endl;
-        return -errno;
+        encode(path);
+        register_closed_file(minerva_entry_temp_path);
     }
     return 0;
 }
