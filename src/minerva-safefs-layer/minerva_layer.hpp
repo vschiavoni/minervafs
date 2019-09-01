@@ -22,6 +22,11 @@ struct minerva_dirp
 
 /*static*/ void* minerva_init(struct fuse_conn_info *conn);
 
+/**
+ * Cleans up the temporary directory when the program ends.
+ */
+void minerva_destroy(void *private_data);
+
 // Base operation
 
 /*static*/ int minerva_getattr(const char* path, struct stat* stbuf);

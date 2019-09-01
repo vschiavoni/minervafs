@@ -133,6 +133,12 @@ int decode(const char* path);
     return 0;
 }
 
+void minerva_destroy(void *private_data)
+{
+    (void) private_data;
+    std::filesystem::remove_all(get_temporary_path(" "));
+}
+
 // Base operation
 
 /*static*/ int minerva_getattr(const char* path, struct stat* stbuf)
