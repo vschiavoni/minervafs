@@ -259,6 +259,7 @@ static void register_closed_file(std::string path)
     entry->second--;
     if (entry->second == 0)
     {
+        open_files.erase(entry);
         unlink(path.c_str());
     }
 }
