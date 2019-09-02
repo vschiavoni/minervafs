@@ -881,10 +881,18 @@ codes::code_params get_code_params(size_t file_size)
     {
         --m;
     }
-    if (m < 3)
+
+    // We set a minum size of m = 15
+    // Because it provides a minumum of 4kB bases
+    // and the size of an I/O block is 4kB 
+    if (m < 15)
     {
-        m = 3; 
+        m = 15;
     }
+    // if (m < 3)
+    // {
+    //     m = 3; 
+    // }
     
     codes::code_params params;
     params.code_name = "hammingcode";
