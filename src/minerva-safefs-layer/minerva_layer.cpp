@@ -931,6 +931,12 @@ codes::code_params get_code_params(size_t file_size)
     codes::code_params params;
     params.code_name = "hammingcode";
     params.m = m;
+    params.mgf = 256;
+    params.n = pow(2,m);
+    params.k = params.n - params.m - 1;
+    params.d = 4;
+    params.r = 2;
+    
     return params;
 }
 
