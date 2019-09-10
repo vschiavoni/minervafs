@@ -1,4 +1,5 @@
 #include "minerva_layer.hpp"
+#include "utils.hpp"
 
 #include <atomic>
 #include <filesystem>
@@ -835,7 +836,8 @@ static void setup()
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    load_config("minervafs.json");
+    auto path_to_config = std::filesystem::path(get_binary_directory()).parent_path().parent_path().parent_path() / "minervafs.json";
+    load_config(path_to_config.string());
 
     std::string base_directory = minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
