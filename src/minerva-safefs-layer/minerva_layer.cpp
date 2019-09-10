@@ -29,15 +29,13 @@
 #include <tartarus/writers.hpp>
 
 
-static const std::string minervafs_root_folder = "/.minervafs";
+static const std::string minervafs_root_folder = "~/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
 static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
-
-static std::string USER_HOME = "";
 
 static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
@@ -68,12 +66,6 @@ std::string get_temporary_path(const char* path);
  * @return Path to the file inside of the minerva storage folder (without the base directory)
  */
 std::string get_minerva_relative_path(const char* path);
-
-/**
- * Compute path of user's home directory
- * @return Path to the home directry
- */
-inline std::string get_user_home();
 
 /**
  * Tests whether a flag combination implies that the file is open for modification
@@ -870,7 +862,7 @@ void setup()
 std::string get_permanent_path(const char* path)
 {
     std::string internal_path(path);
-    return get_user_home() + minervafs_root_folder + "/" + internal_path.substr(1);
+    return minervafs_root_folder + "/" + internal_path.substr(1);
 }
 
 /**
@@ -881,28 +873,15 @@ std::string get_permanent_path(const char* path)
 std::string get_temporary_path(const char* path)
 {
     std::string internal_path(path);
-    return get_user_home() + minervafs_root_folder + minervafs_temp + "/" + internal_path.substr(1);
+    return minervafs_root_folder + minervafs_temp + "/" + internal_path.substr(1);
 }
 
 std::string get_minerva_relative_path(const char* path)
 {
     std::string permanent_path = get_permanent_path(path);
-    std::string root_folder = std::filesystem::path(get_user_home() + "/" + minervafs_root_folder).string();
+    std::string root_folder = std::filesystem::path(minervafs_root_folder).string();
     std::string relative_path = "/" + permanent_path.substr(root_folder.length());
     return relative_path;
-}
-
-inline std::string get_user_home()
-{
-    if (USER_HOME.empty()) {
-        char* homedir;
-        if ((homedir = getenv("HOME")) != NULL)
-        {
-            homedir = getpwuid(getuid())->pw_dir;
-        }
-        USER_HOME = std::string(homedir, strlen(homedir));
-    }
-    return USER_HOME;
 }
 
 time_t get_mtime(const std::string path)
