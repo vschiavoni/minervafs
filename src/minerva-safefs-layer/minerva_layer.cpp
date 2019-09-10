@@ -131,7 +131,7 @@ int decode(const char* path);
 
 
 
-/*static*/ void* minerva_init(struct fuse_conn_info *conn)
+void* minerva_init(struct fuse_conn_info *conn)
 {
     (void) conn;
     setup();
@@ -146,7 +146,7 @@ void minerva_destroy(void *private_data)
 
 // Base operation
 
-/*static*/ int minerva_getattr(const char* path, struct stat* stbuf)
+int minerva_getattr(const char* path, struct stat* stbuf)
 {
     int res = 0;
 
@@ -209,14 +209,14 @@ void minerva_destroy(void *private_data)
     return res;
 }
 
-/*static*/ int minerva_fgetattr(const char *path, struct stat *stbuf,
+int minerva_fgetattr(const char *path, struct stat *stbuf,
                             struct fuse_file_info *fi)
 {
     (void) fi;
     return minerva_getattr(path, stbuf);
 }
 
-/*static*/ int minerva_access(const char* path, int mask)
+int minerva_access(const char* path, int mask)
 {
     (void) mask;
     std::string minerva_entry_path = get_permanent_path(path);
@@ -264,7 +264,7 @@ static void register_closed_file(std::string path)
     }
 }
 
-/*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
+int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::exists(minerva_entry_path))
@@ -289,7 +289,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_open(const char* path, struct fuse_file_info* fi)
+int minerva_open(const char* path, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
@@ -339,7 +339,7 @@ static void register_closed_file(std::string path)
     return -ENOENT;
 }
 
-/*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
+int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
 
@@ -378,7 +378,7 @@ static void register_closed_file(std::string path)
 
 
 // TODO: Inject the usage of GDD
-/*static*/ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
+int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
     (void) fi;
@@ -417,7 +417,7 @@ static void register_closed_file(std::string path)
     return res;
 }
 
-/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
+int minerva_release(const char* path, struct fuse_file_info *fi)
 {
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
@@ -457,7 +457,7 @@ static void register_closed_file(std::string path)
 }
 
 // TODO: update as needed
-/*static*/ int minerva_truncate(const char *path, off_t length)
+int minerva_truncate(const char *path, off_t length)
 {
     /*
     TODO truncate a minerva file
@@ -522,7 +522,7 @@ static void register_closed_file(std::string path)
     return encode(path);
 }
 
-/*static*/ int minerva_chmod(const char* path, mode_t mode)
+int minerva_chmod(const char* path, mode_t mode)
 {
     //FIXME It should be possible to chmod files that are not yet in permanent storage
     std::string temporary_path = get_temporary_path(path);
@@ -553,7 +553,7 @@ static void register_closed_file(std::string path)
 
 
 // Make items
-/*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
+int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     int res;
 
@@ -584,7 +584,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_mkdir(const char *path, mode_t mode)
+int minerva_mkdir(const char *path, mode_t mode)
 {
     std::string persistent_folder_path = get_permanent_path(path);
     if (mkdir(persistent_folder_path.c_str(), mode) == -1)
@@ -601,7 +601,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_releasedir(const char *path, struct fuse_file_info *fi)
+int minerva_releasedir(const char *path, struct fuse_file_info *fi)
 {
     struct minerva_dirp* dirp = get_dirp(fi);
     (void)path;
@@ -612,13 +612,13 @@ static void register_closed_file(std::string path)
 }
 
 // Directory operations
-/*static*/ struct minerva_dirp* get_dirp(struct fuse_file_info *fi)
+struct minerva_dirp* get_dirp(struct fuse_file_info *fi)
 {
     return (struct minerva_dirp*)(uintptr_t)fi->fh;
 }
 
 // TODO: update to open sub dirs
-/*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi)
+int minerva_opendir(const char *path, struct fuse_file_info *fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     if (!std::filesystem::exists(minerva_entry_path))
@@ -655,7 +655,7 @@ static void register_closed_file(std::string path)
 
 
 // TODO: Check if the first if is blogging to read the sub-dir
-/*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi)
 {
     (void) offset;
@@ -690,7 +690,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_rmdir(const char *path)
+int minerva_rmdir(const char *path)
 {
     std::string permanent_path = get_permanent_path(path);
     std::string temporary_path = get_temporary_path(path);
@@ -727,7 +727,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi) {
+int minerva_flush(const char* path, struct fuse_file_info* fi) {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_temp_path = get_temporary_path(path);
     if (!std::filesystem::exists(minerva_entry_path) && !std::filesystem::exists(minerva_temp_path))
@@ -739,7 +739,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_rename(const char* from, const char* to) {
+int minerva_rename(const char* from, const char* to) {
     std::string source = get_temporary_path(from);
     std::string destination = get_temporary_path(to);
 
@@ -773,7 +773,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_unlink(const char* path)
+int minerva_unlink(const char* path)
 {
     std::string entry_path = get_permanent_path(path);
     if (!std::filesystem::exists(entry_path))
@@ -787,7 +787,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_utimens(const char* path, const struct timespec tv[2])
+int minerva_utimens(const char* path, const struct timespec tv[2])
 {
     std::string minerva_entry = get_permanent_path(path);
     if (!std::filesystem::exists(minerva_entry))
