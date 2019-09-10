@@ -29,7 +29,7 @@
 #include <tartarus/writers.hpp>
 
 
-static const std::string minervafs_root_folder = "~/.minervafs";
+static std::string minervafs_root_folder = "~/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
 static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
@@ -43,8 +43,16 @@ static std::mutex of_mutex;
 static minerva::file_format used_file_format = minerva::file_format::JSON;
 
 // Helper functions
+/**
+ * Loads some of the configuration from the settings
+ * @param path Path to the json configuration file
+ */
+static void load_config(std::string path);
 
-void setup();
+/**
+ * Creates all the directories and objects necessary to start the filesystem
+ */
+static void setup();
 
 /**
  * Compute path to the file in the permanent storage folder
@@ -804,15 +812,22 @@ static void register_closed_file(std::string path)
 }
 
 // Helper functions
+static void load_config(std::string path)
+{
+    assert(std::filesystem::exists(path));
+    std::ifstream ifs(path, std::ifstream::in);
+    nlohmann::json configuration = nlohmann::json::parse(ifs);
+    minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
+}
 
-
-
-void setup()
+static void setup()
 {
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    std::string base_directory = get_user_home() + minervafs_root_folder;
+    load_config("minervafs.json");
+
+    std::string base_directory = minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
     std::string temp_directory = base_directory + minervafs_temp;
     std::string indexing_directory = base_directory + "/.indexing";
