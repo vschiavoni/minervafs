@@ -20,7 +20,7 @@ struct minerva_dirp
     off_t offset;
 };
 
-/*static*/ void* minerva_init(struct fuse_conn_info *conn);
+void* minerva_init(struct fuse_conn_info *conn);
 
 /**
  * Cleans up the temporary directory when the program ends.
@@ -29,54 +29,54 @@ void minerva_destroy(void *private_data);
 
 // Base operation
 
-/*static*/ int minerva_getattr(const char* path, struct stat* stbuf);
+int minerva_getattr(const char* path, struct stat* stbuf);
 
-/*static*/ int minerva_fgetattr(const char *path, struct stat *stbuf,
+int minerva_fgetattr(const char *path, struct stat *stbuf,
                             struct fuse_file_info *fi);
 
-/*static*/ int minerva_access(const char* path, int mask);
+int minerva_access(const char* path, int mask);
 
-/*static*/ int minerva_create(const char* path, mode_t mode, struct fuse_file_info * fi);
+int minerva_create(const char* path, mode_t mode, struct fuse_file_info * fi);
 
-/*static*/ int minerva_open(const char* path, struct fuse_file_info* fi);
+int minerva_open(const char* path, struct fuse_file_info* fi);
 
-/*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
+int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi);
 
-/*static*/ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
+int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi);
 
-/*static*/ int minerva_truncate(const char *path, off_t size);
+int minerva_truncate(const char *path, off_t size);
 
-/*static*/ int minerva_chmod(const char* path, mode_t mode);
+int minerva_chmod(const char* path, mode_t mode);
 
 // Make items
-/*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev);
+int minerva_mknod(const char *path, mode_t mode, dev_t rdev);
 
-/*static*/ int minerva_mkdir(const char *path, mode_t mode);
+int minerva_mkdir(const char *path, mode_t mode);
 
-/*static*/ int minerva_releasedir(const char *path, struct fuse_file_info *fi);
+int minerva_releasedir(const char *path, struct fuse_file_info *fi);
 
 // Directory operations
 
-/*static*/ struct minerva_dirp *get_dirp(struct fuse_file_info *fi);
+struct minerva_dirp *get_dirp(struct fuse_file_info *fi);
 
-/*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi);
+int minerva_opendir(const char *path, struct fuse_file_info *fi);
 
-/*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi);
 
-/*static*/ int minerva_rmdir(const char *path);
+int minerva_rmdir(const char *path);
 
-/*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi);
+int minerva_flush(const char* path, struct fuse_file_info* fi);
 
-/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi);
+int minerva_release(const char* path, struct fuse_file_info *fi);
 
-/*static*/ int minerva_rename(const char* from, const char* to);
+int minerva_rename(const char* from, const char* to);
 
-/*static*/ int minerva_unlink(const char* path);
+int minerva_unlink(const char* path);
 
-/*static*/ int minerva_utimens(const char* path, const struct timespec tv[2]);
+int minerva_utimens(const char* path, const struct timespec tv[2]);
 
 //TODO getxattr
 //TODO setattr

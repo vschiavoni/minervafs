@@ -29,7 +29,7 @@
 #include <tartarus/writers.hpp>
 
 
-static const std::string minervafs_root_folder = "/.minervafs";
+static std::string minervafs_root_folder = "~/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
 static const std::string minervafs_registry = "/.registry/";
 static const std::string minervafs_identifier_register = "/identifiers";//"/.identifiers";
@@ -37,16 +37,22 @@ static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 
-static std::string USER_HOME = "";
-
 static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
 static std::mutex of_mutex;
 static minerva::file_format used_file_format = minerva::file_format::JSON;
 
 // Helper functions
+/**
+ * Loads some of the configuration from the settings
+ * @param path Path to the json configuration file
+ */
+static void load_config(std::string path);
 
-void setup();
+/**
+ * Creates all the directories and objects necessary to start the filesystem
+ */
+static void setup();
 
 /**
  * Compute path to the file in the permanent storage folder
@@ -68,12 +74,6 @@ std::string get_temporary_path(const char* path);
  * @return Path to the file inside of the minerva storage folder (without the base directory)
  */
 std::string get_minerva_relative_path(const char* path);
-
-/**
- * Compute path of user's home directory
- * @return Path to the home directry
- */
-inline std::string get_user_home();
 
 /**
  * Tests whether a flag combination implies that the file is open for modification
@@ -131,7 +131,7 @@ int decode(const char* path);
 
 
 
-/*static*/ void* minerva_init(struct fuse_conn_info *conn)
+void* minerva_init(struct fuse_conn_info *conn)
 {
     (void) conn;
     setup();
@@ -146,7 +146,7 @@ void minerva_destroy(void *private_data)
 
 // Base operation
 
-/*static*/ int minerva_getattr(const char* path, struct stat* stbuf)
+int minerva_getattr(const char* path, struct stat* stbuf)
 {
     int res = 0;
 
@@ -209,14 +209,14 @@ void minerva_destroy(void *private_data)
     return res;
 }
 
-/*static*/ int minerva_fgetattr(const char *path, struct stat *stbuf,
+int minerva_fgetattr(const char *path, struct stat *stbuf,
                             struct fuse_file_info *fi)
 {
     (void) fi;
     return minerva_getattr(path, stbuf);
 }
 
-/*static*/ int minerva_access(const char* path, int mask)
+int minerva_access(const char* path, int mask)
 {
     (void) mask;
     std::string minerva_entry_path = get_permanent_path(path);
@@ -259,11 +259,12 @@ static void register_closed_file(std::string path)
     entry->second--;
     if (entry->second == 0)
     {
+        open_files.erase(entry);
         unlink(path.c_str());
     }
 }
 
-/*static*/ int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
+int minerva_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::exists(minerva_entry_path))
@@ -288,7 +289,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_open(const char* path, struct fuse_file_info* fi)
+int minerva_open(const char* path, struct fuse_file_info* fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
@@ -338,7 +339,7 @@ static void register_closed_file(std::string path)
     return -ENOENT;
 }
 
-/*static*/ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
+int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
 
@@ -377,7 +378,7 @@ static void register_closed_file(std::string path)
 
 
 // TODO: Inject the usage of GDD
-/*static*/ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
+int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
     (void) fi;
@@ -416,7 +417,7 @@ static void register_closed_file(std::string path)
     return res;
 }
 
-/*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
+int minerva_release(const char* path, struct fuse_file_info *fi)
 {
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
@@ -456,7 +457,7 @@ static void register_closed_file(std::string path)
 }
 
 // TODO: update as needed
-/*static*/ int minerva_truncate(const char *path, off_t length)
+int minerva_truncate(const char *path, off_t length)
 {
     /*
     TODO truncate a minerva file
@@ -521,7 +522,7 @@ static void register_closed_file(std::string path)
     return encode(path);
 }
 
-/*static*/ int minerva_chmod(const char* path, mode_t mode)
+int minerva_chmod(const char* path, mode_t mode)
 {
     //FIXME It should be possible to chmod files that are not yet in permanent storage
     std::string temporary_path = get_temporary_path(path);
@@ -552,7 +553,7 @@ static void register_closed_file(std::string path)
 
 
 // Make items
-/*static*/ int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
+int minerva_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     int res;
 
@@ -583,7 +584,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_mkdir(const char *path, mode_t mode)
+int minerva_mkdir(const char *path, mode_t mode)
 {
     std::string persistent_folder_path = get_permanent_path(path);
     if (mkdir(persistent_folder_path.c_str(), mode) == -1)
@@ -600,7 +601,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_releasedir(const char *path, struct fuse_file_info *fi)
+int minerva_releasedir(const char *path, struct fuse_file_info *fi)
 {
     struct minerva_dirp* dirp = get_dirp(fi);
     (void)path;
@@ -611,13 +612,13 @@ static void register_closed_file(std::string path)
 }
 
 // Directory operations
-/*static*/ struct minerva_dirp* get_dirp(struct fuse_file_info *fi)
+struct minerva_dirp* get_dirp(struct fuse_file_info *fi)
 {
     return (struct minerva_dirp*)(uintptr_t)fi->fh;
 }
 
 // TODO: update to open sub dirs
-/*static*/ int minerva_opendir(const char *path, struct fuse_file_info *fi)
+int minerva_opendir(const char *path, struct fuse_file_info *fi)
 {
     std::string minerva_entry_path = get_permanent_path(path);
     if (!std::filesystem::exists(minerva_entry_path))
@@ -654,7 +655,7 @@ static void register_closed_file(std::string path)
 
 
 // TODO: Check if the first if is blogging to read the sub-dir
-/*static*/ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                            off_t offset, struct fuse_file_info *fi)
 {
     (void) offset;
@@ -689,7 +690,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_rmdir(const char *path)
+int minerva_rmdir(const char *path)
 {
     std::string permanent_path = get_permanent_path(path);
     std::string temporary_path = get_temporary_path(path);
@@ -726,7 +727,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_flush(const char* path, struct fuse_file_info* fi) {
+int minerva_flush(const char* path, struct fuse_file_info* fi) {
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_temp_path = get_temporary_path(path);
     if (!std::filesystem::exists(minerva_entry_path) && !std::filesystem::exists(minerva_temp_path))
@@ -738,7 +739,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_rename(const char* from, const char* to) {
+int minerva_rename(const char* from, const char* to) {
     std::string source = get_temporary_path(from);
     std::string destination = get_temporary_path(to);
 
@@ -772,7 +773,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_unlink(const char* path)
+int minerva_unlink(const char* path)
 {
     std::string entry_path = get_permanent_path(path);
     if (!std::filesystem::exists(entry_path))
@@ -786,7 +787,7 @@ static void register_closed_file(std::string path)
     return 0;
 }
 
-/*static*/ int minerva_utimens(const char* path, const struct timespec tv[2])
+int minerva_utimens(const char* path, const struct timespec tv[2])
 {
     std::string minerva_entry = get_permanent_path(path);
     if (!std::filesystem::exists(minerva_entry))
@@ -811,15 +812,32 @@ static void register_closed_file(std::string path)
 }
 
 // Helper functions
+static void load_config(std::string path)
+{
+    assert(std::filesystem::exists(path));
+    std::ifstream ifs(path, std::ifstream::in);
+    nlohmann::json configuration = nlohmann::json::parse(ifs);
+    minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
+    if (minervafs_root_folder.at(0) == '~')
+    {
+        const char *home = getenv("HOME");
+        if (home == NULL)
+        {
+            home = getpwuid(getuid())->pw_dir;
+        }
+        std::string home_directory(home);
+        minervafs_root_folder.replace(0, 1, home_directory);
+    }
+}
 
-
-
-void setup()
+static void setup()
 {
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    std::string base_directory = get_user_home() + minervafs_root_folder;
+    load_config("minervafs.json");
+
+    std::string base_directory = minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
     std::string temp_directory = base_directory + minervafs_temp;
     std::string indexing_directory = base_directory + "/.indexing";
@@ -869,7 +887,7 @@ void setup()
 std::string get_permanent_path(const char* path)
 {
     std::string internal_path(path);
-    return get_user_home() + minervafs_root_folder + "/" + internal_path.substr(1);
+    return minervafs_root_folder + "/" + internal_path.substr(1);
 }
 
 /**
@@ -880,28 +898,15 @@ std::string get_permanent_path(const char* path)
 std::string get_temporary_path(const char* path)
 {
     std::string internal_path(path);
-    return get_user_home() + minervafs_root_folder + minervafs_temp + "/" + internal_path.substr(1);
+    return minervafs_root_folder + minervafs_temp + "/" + internal_path.substr(1);
 }
 
 std::string get_minerva_relative_path(const char* path)
 {
     std::string permanent_path = get_permanent_path(path);
-    std::string root_folder = std::filesystem::path(get_user_home() + "/" + minervafs_root_folder).string();
+    std::string root_folder = std::filesystem::path(minervafs_root_folder).string();
     std::string relative_path = "/" + permanent_path.substr(root_folder.length());
     return relative_path;
-}
-
-inline std::string get_user_home()
-{
-    if (USER_HOME.empty()) {
-        char* homedir;
-        if ((homedir = getenv("HOME")) != NULL)
-        {
-            homedir = getpwuid(getuid())->pw_dir;
-        }
-        USER_HOME = std::string(homedir, strlen(homedir));
-    }
-    return USER_HOME;
 }
 
 time_t get_mtime(const std::string path)
@@ -939,18 +944,13 @@ codes::code_params get_code_params(size_t file_size)
     codes::code_params params;
     params.code_name = "hammingcode";
     params.m = m;
+    params.mgf = 256;
+    params.n = pow(2,m);
+    params.k = params.n - params.m - 1;
+    params.d = 4;
+    params.r = 2;
+    
     return params;
-}
-
-static std::string stringify_code_params(codes::code_params params) {
-    std::string message = params.code_name +
-        ", n = " + std::to_string(params.n) +
-        ", k = " + std::to_string(params.k) +
-        ", m = " + std::to_string(params.m) +
-        ", mgf = " + std::to_string(params.mgf) +
-        ", d = " + std::to_string(params.d) +
-        ", r = " + std::to_string(params.r);
-    return message;
 }
 
 codes::code_params extract_code_params(nlohmann::json config)
@@ -982,7 +982,6 @@ int encode(const char* path)
     std::string mime_type = "TODO"; // TODO: Change;
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
     tartarus::model::coded_data coded = code.encode_data(raw);
-    std::cout << "encode(" << path << "): "  << stringify_code_params(code_param) << std::endl;
 
     if (!minerva_storage.store(coded))
     {
