@@ -818,6 +818,16 @@ static void load_config(std::string path)
     std::ifstream ifs(path, std::ifstream::in);
     nlohmann::json configuration = nlohmann::json::parse(ifs);
     minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
+    if (minervafs_root_folder.at(0) == '~')
+    {
+        const char *home = getenv("HOME");
+        if (home == NULL)
+        {
+            home = getpwuid(getuid())->pw_dir;
+        }
+        std::string home_directory(home);
+        minervafs_root_folder.replace(0, 1, home_directory);
+    }
 }
 
 static void setup()
