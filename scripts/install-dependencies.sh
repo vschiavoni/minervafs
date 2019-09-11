@@ -14,7 +14,7 @@ main () {
     # Update an install base dependencies
     apt-get update && \
     apt-get dist-upgrade --yes && \
-    apt-get install build-essential cmake curl git g++ libfuse2 libfuse-dev python wget xz-utils --yes --quiet
+    apt-get install build-essential cmake curl git g++ libfuse2 libfuse-dev libssl-dev python wget xz-utils --yes --quiet
 
     # Install specific version of clang
     echo "deb http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
