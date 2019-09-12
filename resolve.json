@@ -30,7 +30,7 @@
         "name": "minerva",
         "resolver": "git",
         "method": "semver",
-        "major": 8,
+        "major": 9,
         "sources": ["github.com/AgileCloudLab/minerva.git"]
     }    
 ]
