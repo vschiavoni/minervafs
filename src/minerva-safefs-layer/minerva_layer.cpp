@@ -436,8 +436,8 @@ static void register_closed_file(std::string path)
     }
     else
     {
-        auto start = std::chrono::high_resolution_clock::now();
-        auto start_time = static_cast<uint64_t>(start.time_since_epoch().count());
+        uint64_t start_time =  std::chrono::duration_cast<std::chrono::microseconds>
+	    (std::chrono::system_clock::now().time_since_epoch()).count();
         measurement["start_time"] = start_time;
         measurement["fs_op_time"] = 0;
     }
@@ -528,8 +528,9 @@ static void register_closed_file(std::string path)
     }
 
     auto release_end = std::chrono::high_resolution_clock::now();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto end_time = static_cast<uint64_t>(end.time_since_epoch().count());
+    uint64_t end_time =  std::chrono::duration_cast<std::chrono::microseconds>
+	    (std::chrono::system_clock::now().time_since_epoch()).count();
+       
     auto release_time = std::chrono::duration_cast<std::chrono::microseconds>(release_end - release_start);
     
     
