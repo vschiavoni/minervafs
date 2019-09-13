@@ -43,6 +43,12 @@ static std::map<std::string, std::atomic_uint> open_files;
 static std::mutex of_mutex;
 static minerva::file_format used_file_format = minerva::file_format::JSON;
 
+//TODO: we should deallocate this memory when exiting the application
+thread_local codewrapper::CodeWrapper* codecs[20]={NULL, NULL, NULL, NULL, NULL,
+						   NULL, NULL, NULL, NULL, NULL,
+						   NULL, NULL, NULL, NULL, NULL,
+						   NULL, NULL, NULL, NULL, NULL};
+
 // Helper functions
 /**
  * Loads some of the configuration from the settings
@@ -131,6 +137,25 @@ int encode(const char* path);
 int decode(const char* path);
 
 
+/**
+ * Returns a Hamming codec for a specific m value
+ * @param cparams code params with code name and m value
+ * @ the codec if m was valid and a Hamming codec was requested, NULL otherwise
+ */
+codewrapper::CodeWrapper* get_Hamming_codec(codes:: code_params cparams)
+{
+    if(cparams.m<3 || cparams.m>19 || cparams.code_name != "hammingcode")
+    {
+	return NULL;
+    }
+
+    if(codecs[cparams.m] == NULL)
+    {
+	codecs[cparams.m] = new codewrapper::CodeWrapper(cparams);
+    }
+    
+    return codecs[cparams.m];
+}
 
 void* minerva_init(struct fuse_conn_info *conn)
 {
@@ -979,11 +1004,11 @@ int encode(const char* path)
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
 
     codes::code_params code_param = get_code_params(file_size);
-    codewrapper::CodeWrapper code(code_param);
+    codewrapper::CodeWrapper* code = get_Hamming_codec(code_param);
     std::string filename = get_minerva_relative_path(path);
     std::string mime_type = "TODO"; // TODO: Change;
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
-    tartarus::model::coded_data coded = code.encode_data(raw);
+    tartarus::model::coded_data coded = code->encode_data(raw);
 
     if (!minerva_storage.store(coded))
     {
@@ -1001,9 +1026,9 @@ int decode(const char* path)
     std::string filename = get_minerva_relative_path(path);
 
     tartarus::model::coded_data coded_data = minerva_storage.load(filename);
-    codes::code_params params = extract_code_params(coded_data.coding_configuration);
-    codewrapper::CodeWrapper coder(params);
-    tartarus::model::raw_data data = coder.decode_data(coded_data);
+    codes::code_params code_param = extract_code_params(coded_data.coding_configuration);
+    codewrapper::CodeWrapper* code = get_Hamming_codec(code_param);
+    tartarus::model::raw_data data = code->decode_data(coded_data);
     if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data))
     {
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
