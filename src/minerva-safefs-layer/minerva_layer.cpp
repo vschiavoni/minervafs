@@ -143,7 +143,8 @@ std::string convert_result_to_csv_entry(nlohmann::json result)
 {
 
     uint64_t total_time = result["total_time"].get<uint64_t>();
-    uint64_t fs_op_time = result["fs_op_time"].get<uint64_t>(); 
+    uint64_t fs_op_time = result["fs_op_time"].get<uint64_t>();
+    uint64_t minerva_operation_time_full = result["full_minerva_time"].get<uint64_t>();
     uint64_t minerva_operation_time = result["operation_time"].get<uint64_t>();
 
     uint64_t coding_time = result["coding_time"].get<uint64_t>();
@@ -153,7 +154,8 @@ std::string convert_result_to_csv_entry(nlohmann::json result)
 
     std::stringstream ss;
     ss << "\n" << total_time << ","
-       << fs_op_time << ","        
+       << fs_op_time << ","
+       << minerva_operation_time_full << ","
        << minerva_operation_time << ","
        << coding_time << ","
        << hashing_time << ","
@@ -174,7 +176,7 @@ void append_result(nlohmann::json result)
 {
     (void) conn;
     setup();
-    std::string header = "total time, fs operation time, minerva operation time, coding time, hashing time, index time, release time";
+    std::string header = "total time, fs operation time, fulle minerva operation time, minerva operation time, coding time, hashing time, index time, release time";
     std::ofstream result_out(result_path);
     result_out << header;
     result_out.close();  
@@ -523,21 +525,26 @@ static void register_closed_file(std::string path)
     // If file was open for modifications, encode it and let encode function take care of unlinking the decided file in temporary storage
     if (is_flagged_for_modification(fi->flags))
     {
+        auto full_minerva_time_start = std::chrono::high_resolution_clock::now();
         encode(path);
+        auto full_minerva_time_end = std::chrono::high_resolution_clock::now();
         register_closed_file(minerva_entry_temp_path);
     }
 
     auto release_end = std::chrono::high_resolution_clock::now();
     uint64_t end_time =  std::chrono::duration_cast<std::chrono::microseconds>
 	    (std::chrono::system_clock::now().time_since_epoch()).count();
+
+    auto full_minerva_time = std::chrono::duration_cast<std::chrono::microseconds>(full_minerva_time_end -
+                                                                              full_minerva_time_start);
        
     auto release_time = std::chrono::duration_cast<std::chrono::microseconds>(release_end - release_start);
-    
     
     std::string res_name = std::string(path);
     auto measurement = results[res_name]; 
     measurement["end_time"] = end_time;
-    measurement["release_time"] = static_cast<uint64_t>(release_time.count()); 
+    measurement["release_time"] = static_cast<uint64_t>(release_time.count());
+    measurement["full_minerva_time"] = static_cast<uint64_t>(full_minerva_time);
     uint64_t start_time = measurement["start_time"].get<uint64_t>();
     measurement["total_time"] = (end_time - start_time); 
     append_result(measurement);
