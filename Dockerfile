@@ -1,4 +1,4 @@
-FROM ubuntu:19.04
+FROM ubuntu:18.04
 
 
 # install base dependencies
@@ -11,8 +11,8 @@ COPY ssh/* ~/.ssh/
 RUN ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
     git config --global url."git@github.com:".insteadOf "https://github.com/" 
 COPY . /tmp/minerva-safefs-layer/
-COPY scripts/config scripts/sshkey scripts/sshkey.pub /root/.ssh/
+COPY ssh /root/.ssh
 WORKDIR  /tmp/minerva-safefs-layer
-RUN ./waf configure build
-
-
+RUN ldconfig
+RUN ./waf configure
+RUN ./waf build
