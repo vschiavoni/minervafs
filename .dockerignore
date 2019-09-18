@@ -1,4 +1,5 @@
 build
+build_current
 .git
 .lock-waf_linux_build
 resolved_dependencies

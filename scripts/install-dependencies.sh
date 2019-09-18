@@ -2,7 +2,7 @@
 ###############################################################################
 ## Install the dependencies needed to run this project
 ##
-## Tested on Ubuntu 19.04 installed using Ubuntu MAAS
+## Tested on Ubuntu 18.04 installed using Ubuntu MAAS and Docker
 ###############################################################################
 
 main () {
@@ -11,19 +11,26 @@ main () {
         echo "This script must run by root or a sudoer" >&2
         exit 0
     fi
+
+    if [[ ! -f /etc/lsb-release || "$(grep --count 'DISTRIB_ID=Ubuntu' /etc/lsb-release)" -eq 0 || "$(grep --count 'DISTRIB_RELEASE=18.04' /etc/lsb-release)" -eq 0  ]]; then
+        echo "This script is meant to run on Ubuntu 18.04" >&2
+        exit 0
+    fi
     # Update an install base dependencies
     apt-get update && \
     apt-get dist-upgrade --yes && \
     apt-get install build-essential cmake curl git g++ libfuse2 libfuse-dev libssl-dev python wget xz-utils --yes --quiet
 
     # Install specific version of clang
-    echo "deb http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
-    echo "deb-src http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" | tee --append /etc/apt/sources.list.d/llvm.list && \
+    echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
+    echo "deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | tee --append /etc/apt/sources.list.d/llvm.list && \
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get update && \
-    apt-get install clang-8 libclang-8-dev libclang-common-8-dev --yes --quiet && \
-    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-8 100 &&\
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-8 100
+    apt-get install clang-8 libclang-8-dev libclang-common-8-dev libstdc++-8-dev --yes --quiet && \
+    update-alternatives --install /usr/bin/c++     c++     /usr/bin/clang++-8 100 &&\
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-8 100 &&\
+    update-alternatives --install /usr/bin/cc      cc      /usr/bin/clang-8 100 &&\
+    update-alternatives --install /usr/bin/clang   clang   /usr/bin/clang-8 100
 
     # nlohmann-json
     if [ ! -d /tmp/nlohmann-json ]; then
