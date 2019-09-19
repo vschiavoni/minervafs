@@ -53,6 +53,19 @@ main () {
     make
     make install
     ldconfig
+
+    # libcorrect
+    if [ ! -d /tmp/libcorrect ]; then
+        git clone https://github.com/quiet/libcorrect /tmp/libcorrect --quiet
+    fi
+    cd /tmp/libcorrect || exit
+    git pull --all --quiet
+    mkdir build &&\
+    cd build &&\
+    cmake .. &&\
+    make &&
+    make install
+    ldconfig
 }
 
 main "${@}"
