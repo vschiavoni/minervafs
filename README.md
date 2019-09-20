@@ -8,8 +8,9 @@ SafeFS is a software defined file system which is highly modular for reference s
 # Dependencies
 
 * Clang 8+
-* [nlohmann's JSON](https://github.com/nlohmann/json) 
 * [crypto++](https://github.com/weidai11/cryptopp)
+* [nlohmann's JSON](https://github.com/nlohmann/json) 
+* [libcorrect](https://github.com/quiet/libcorrect)
 * openssl
 * Python
 * FUSE 2
