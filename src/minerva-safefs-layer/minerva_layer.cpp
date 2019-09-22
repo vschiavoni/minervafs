@@ -139,28 +139,49 @@ int encode(const char* path);
 int decode(const char* path);
 
 
+std::string extract_result_name(const char* path);
+
 std::string convert_result_to_csv_entry(nlohmann::json result)
 {
 
+    std::cout << "here" << std::endl;
+    std::string type = result["type"].get<std::string>();
     uint64_t total_time = result["total_time"].get<uint64_t>();
     uint64_t fs_op_time = result["fs_op_time"].get<uint64_t>();
     uint64_t minerva_operation_time_full = result["full_minerva_time"].get<uint64_t>();
     uint64_t minerva_operation_time = result["operation_time"].get<uint64_t>();
-
+    std::cout << "here 77" << std::endl;    
     uint64_t coding_time = result["coding_time"].get<uint64_t>();
-    uint64_t hashing_time = result["hashing_time"].get<uint64_t>();
-    uint64_t index_time = result["index_time"].get<uint64_t>();
-    uint64_t release_time = result["release_time"].get<uint64_t>();
-
+    std::cout << "here 88" << std::endl;    
+    std::cout << "here 2" << std::endl;
     std::stringstream ss;
     ss << "\n" << total_time << ","
        << fs_op_time << ","
        << minerva_operation_time_full << ","
        << minerva_operation_time << ","
-       << coding_time << ","
-       << hashing_time << ","
-       << index_time << "," 
-       << release_time; 
+       << coding_time << ",";    
+
+    if (type == "write")
+    {
+        uint64_t hashing_time = result["hashing_time"].get<uint64_t>();
+        uint64_t index_time = result["index_time"].get<uint64_t>();
+        uint64_t release_time = result["release_time"].get<uint64_t>();
+        uint64_t write_time = result["write_time"].get<uint64_t>();
+        std::cout << "here 3" << std::endl;        
+        ss << hashing_time << ","
+           << index_time << "," 
+           << release_time << ","
+           << write_time;  
+    }
+    else
+    {
+    std::cout << "here 4" << std::endl;        
+        uint64_t minerva_load_time = result["minerva_load_time"].get<uint64_t>();
+        ss << minerva_load_time;
+    }
+
+        
+    
     return ss.str(); 
 }
 
@@ -431,7 +452,8 @@ static void register_closed_file(std::string path)
 
 
     nlohmann::json measurement;
-    std::string res_name = std::string(path);
+    measurement["type"] = std::string("write");    
+    std::string res_name = extract_result_name(path);
     if (results.count(res_name) == 1)
     {
         measurement = results[res_name];
@@ -492,6 +514,8 @@ static void register_closed_file(std::string path)
 
 /*static*/ int minerva_release(const char* path, struct fuse_file_info *fi)
 {
+    std::string res_name = extract_result_name(path);
+    auto measurement = results[res_name];     
 
     auto release_start = std::chrono::high_resolution_clock::now();
     // Check if path points to directory
@@ -523,28 +547,31 @@ static void register_closed_file(std::string path)
     }
 
     // If file was open for modifications, encode it and let encode function take care of unlinking the decided file in temporary storage
+    auto full_minerva_time_start = std::chrono::high_resolution_clock::now();    
     if (is_flagged_for_modification(fi->flags))
     {
-        auto full_minerva_time_start = std::chrono::high_resolution_clock::now();
+
         encode(path);
-        auto full_minerva_time_end = std::chrono::high_resolution_clock::now();
+
         register_closed_file(minerva_entry_temp_path);
     }
 
+    auto full_minerva_time_end = std::chrono::high_resolution_clock::now();
+    auto full_minerva_time = std::chrono::duration_cast<std::chrono::microseconds>(full_minerva_time_end -
+                                                                                   full_minerva_time_start);
+        
+    measurement["full_minerva_time"] = static_cast<uint64_t>(full_minerva_time.count());        
     auto release_end = std::chrono::high_resolution_clock::now();
     uint64_t end_time =  std::chrono::duration_cast<std::chrono::microseconds>
 	    (std::chrono::system_clock::now().time_since_epoch()).count();
 
-    auto full_minerva_time = std::chrono::duration_cast<std::chrono::microseconds>(full_minerva_time_end -
-                                                                              full_minerva_time_start);
+
        
     auto release_time = std::chrono::duration_cast<std::chrono::microseconds>(release_end - release_start);
     
-    std::string res_name = std::string(path);
-    auto measurement = results[res_name]; 
+
     measurement["end_time"] = end_time;
     measurement["release_time"] = static_cast<uint64_t>(release_time.count());
-    measurement["full_minerva_time"] = static_cast<uint64_t>(full_minerva_time);
     uint64_t start_time = measurement["start_time"].get<uint64_t>();
     measurement["total_time"] = (end_time - start_time); 
     append_result(measurement);
@@ -1075,11 +1102,11 @@ int encode(const char* path)
     std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
 
     codes::code_params code_param = get_code_params(file_size);
+    auto encode_start = std::chrono::high_resolution_clock::now();    
     codewrapper::CodeWrapper code(code_param);
     std::string filename = get_minerva_relative_path(path);
     std::string mime_type = "TODO"; // TODO: Change;
     tartarus::model::raw_data raw {0, static_cast<uint32_t>(file_size), filename, mime_type, data};
-    auto encode_start = std::chrono::high_resolution_clock::now();
     tartarus::model::coded_data coded = code.encode_data(raw);
     auto encode_end = std::chrono::high_resolution_clock::now();    
     std::cout << "encode(" << path << "): "  << stringify_code_params(code_param) << std::endl;
@@ -1095,7 +1122,7 @@ int encode(const char* path)
     }
     auto storage_end = std::chrono::high_resolution_clock::now();
 
-    std::string res_name = std::string(path);
+    std::string res_name = extract_result_name(path);
 
     auto measurement = results[res_name];
 
@@ -1114,12 +1141,21 @@ int encode(const char* path)
 
 int decode(const char* path)
 {
+    std::string res_name = extract_result_name(path);
+    auto measurement = results[res_name];
+    
     std::string minerva_entry_path = get_permanent_path(path);
     std::string minerva_entry_temp_path = get_temporary_path(path);
     std::string filename = get_minerva_relative_path(path);
 
+    auto load_start = std::chrono::high_resolution_clock::now();
     tartarus::model::coded_data coded_data = minerva_storage.load(filename);
+    auto load_end = std::chrono::high_resolution_clock::now();
+    auto load_time = std::chrono::duration_cast<std::chrono::microseconds>(load_end-load_start);
+    measurement["minerva_load_time"] = static_cast<uint64_t>(load_time.count());    
+
     codes::code_params params = extract_code_params(coded_data.coding_configuration);
+    auto decode_start = std::chrono::high_resolution_clock::now();        
     codewrapper::CodeWrapper coder(params);
     tartarus::model::raw_data data = coder.decode_data(coded_data);
     if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data))
@@ -1127,6 +1163,12 @@ int decode(const char* path)
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
         return -1;
     }
+    auto decode_end = std::chrono::high_resolution_clock::now();
+
+    auto decode_time = std::chrono::duration_cast<std::chrono::microseconds>(decode_end-decode_start);
+
+    measurement["coding_time"] = static_cast<uint64_t>(decode_time.count());    
+    
     return 0;
 }
 
@@ -1139,4 +1181,9 @@ static bool is_flagged_for_modification(int flags)
             ((flags & O_CREAT) == O_CREAT)     ||
             ((flags & O_TMPFILE) == O_TMPFILE) ||
             ((flags & O_TRUNC) == O_TRUNC);
+}
+
+std::string extract_result_name(const char* path)
+{
+    return std::filesystem::path(path).filename().string();
 }
