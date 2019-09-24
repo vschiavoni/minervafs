@@ -36,3 +36,11 @@
 
 # Deployment files
 ssh/
+
+# Build artifacts and ide folders
+build
+build_current
+.lock-waf_linux_build
+resolve_symlinks
+.vscode
+.waf*
