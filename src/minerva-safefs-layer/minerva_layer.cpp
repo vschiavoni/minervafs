@@ -142,7 +142,6 @@ std::string extract_result_name(const char* path);
 
 std::string convert_result_to_csv_entry(nlohmann::json result)
 {
-    std::cout << "result: " << result.dump() << std::endl;
     std::string type = result["type"].get<std::string>();
     uint32_t total_time = result["total_time"].get<uint64_t>();
     uint64_t fs_op_time = result["fs_op_time"].get<uint64_t>();
@@ -168,7 +167,6 @@ std::string convert_result_to_csv_entry(nlohmann::json result)
     }
     else if (type == "read")
     {
-    std::cout << "here 4" << std::endl;        
     //uint64_t minerva_load_time = result["minerva_load_time"].get<uint64_t>();
     //  ss << minerva_load_time;
     }    
@@ -593,13 +591,10 @@ static void register_closed_file(std::string path)
     auto release_time = std::chrono::duration_cast<std::chrono::microseconds>(release_end - release_start);
     
 
-    std::cout << "ll " << measurement.dump() << std::endl; 
     measurement["end_time"] = end_time;
     measurement["release_time"] = static_cast<uint64_t>(release_time.count());
     uint64_t start_time = measurement["start_time"].get<uint64_t>();
-    std::cout << "Auout " << std::endl;
     measurement["total_time"] = (end_time - start_time);
-    std::cout << "kk: " << measurement.dump() << std::endl;
     append_result(measurement);
 
     results.erase(res_name); 
@@ -1149,9 +1144,7 @@ int encode(const char* path)
     auto storage_end = std::chrono::high_resolution_clock::now();
 
     const std::string res_name = extract_result_name(path);
-    std::cout << "res name encode: " << res_name << std::endl; 
     auto measurement = results[res_name];
-    std::cout << "in process " << measurement.dump() << std::endl;
 
     auto encoding_time = std::chrono::duration_cast<std::chrono::microseconds>(encode_end-encode_start);
 
@@ -1162,7 +1155,6 @@ int encode(const char* path)
     measurement["hashing_time"] = hashing_time;
     measurement["index_time"] = index_time;
 
-    std::cout << "in process 2 " << measurement.dump() << std::endl;    
     results[res_name] = measurement; 
     return 0;
 
@@ -1203,7 +1195,6 @@ int decode(const char* path)
 
     measurement["coding_time"] = static_cast<uint64_t>(decode_time.count());
     measurement["full_minerva_time"] = static_cast<uint64_t>(full_time.count());
-    std::cout << "decode: " << measurement.dump() << std::endl;
     results[res_name] = measurement;
     
     return 0;
