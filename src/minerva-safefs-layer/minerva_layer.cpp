@@ -2,6 +2,7 @@
 #include "utils.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <iostream> // REMEMBER TO REMOVE
 #include <map>
@@ -834,6 +835,23 @@ int minerva_utimens(const char* path, const struct timespec tv[2])
         return -errno;
     }
     close(fd);
+    return 0;
+}
+
+int minerva_listxattr(const char* path, char* list, size_t size)
+{
+    (void) list;
+    (void) size;
+    std::string minerva_entry = get_permanent_path(path);
+    if (!std::filesystem::exists(minerva_entry))
+    {
+        minerva_entry = get_temporary_path(path);
+        if (!std::filesystem::exists(minerva_entry))
+        {
+            std::cerr << "utimens(" << path << "): Could not find file" << std::endl;
+            return -ENOENT;
+        }
+    }
     return 0;
 }
 

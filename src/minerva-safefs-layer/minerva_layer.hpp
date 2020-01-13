@@ -82,5 +82,7 @@ int minerva_utimens(const char* path, const struct timespec tv[2]);
 //TODO setattr
 //TODO setxattr
 
+int minerva_listxattr(const char* path, char* list, size_t size);
+
 // Helper function
 void set_file_format(int file_format);

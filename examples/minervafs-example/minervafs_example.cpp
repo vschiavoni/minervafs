@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
     minerva_operations.rename = minerva_rename;
     minerva_operations.unlink = minerva_unlink;
     minerva_operations.utimens = minerva_utimens;
+    minerva_operations.listxattr = minerva_listxattr;
 
     return fuse_main(argc, argv, &minerva_operations, NULL);
 }
