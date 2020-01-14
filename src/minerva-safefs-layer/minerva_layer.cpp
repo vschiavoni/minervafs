@@ -1033,6 +1033,7 @@ int encode(const char* path)
         std::cerr << "encode(" << path << "): Did not store file provided" << std::endl;
         return -errno;
     }
+    sync();
     return 0;
 
 }
