@@ -7,6 +7,7 @@ SafeFS is a software defined file system which is highly modular for reference s
 
 # Dependencies
 
+* git
 * Clang 8+
 * [crypto++](https://github.com/weidai11/cryptopp)
 * [nlohmann's JSON](https://github.com/nlohmann/json) 
@@ -24,20 +25,21 @@ A dependency install script is available in `scripts/install-dependencies.sh` fo
 Update the submodules to build the layer.
 
 ```bash
+git submodule init
 git submodule update
 ```
 
-We build both a shared and static version of this library, just build using the command 
-
-```bash 
-python waf configure build 
+Ensure you have all the necessary dependencies to build by running:
+```bash
+python waf configure
 ```
 
-after first configuration 
+We build both a shared and static version of this library, just build using the command:
 
 ```bash 
 python waf build 
 ```
+
 
 ## Build after a dependency upgrade
 
