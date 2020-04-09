@@ -1,4 +1,6 @@
-#define FUSE_USE_VERSION 26
+#ifndef FUSE_USE_VERSION
+#define FUSE_USE_VERSION 29
+#endif
 
 #include <minerva-safefs-layer/minerva_layer.hpp>
 

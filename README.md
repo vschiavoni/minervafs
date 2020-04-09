@@ -14,7 +14,7 @@ SafeFS is a software defined file system which is highly modular for reference s
 * [libcorrect](https://github.com/quiet/libcorrect)
 * openssl
 * Python
-* FUSE 2
+* FUSE 2.9
 
 A dependency install script is available in `scripts/install-dependencies.sh` for Ubuntu 18.04.
 
