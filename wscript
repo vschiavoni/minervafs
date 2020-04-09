@@ -19,7 +19,7 @@ def configure(cnf) :
     cnf.load('compiler_cxx')
 
     link_flags = ['-pthread']
-    cxx_flags = ['-std=c++17', '-Wall', '-Werror', '-Wextra', '-O3', '-D_FILE_OFFSET_BITS=64']
+    cxx_flags = ['-std=c++17', '-g', '-Wall', '-Werror', '-Wextra', '-O3', '-D_FILE_OFFSET_BITS=64']
     
     if sys.platform == 'linux' or sys.platform == 'linux2':
         link_flags.append('-lstdc++fs')
