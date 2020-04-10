@@ -1,10 +1,10 @@
 #ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 29
+#define FUSE_USE_VERSION 39
 #endif
 
 #include <minerva-safefs-layer/minerva_layer.hpp>
 
-#include <fuse.h>
+#include <fuse3/fuse.h>
 
 static struct fuse_operations minerva_operations;
 
@@ -16,7 +16,6 @@ int main(int argc, char* argv[])
     minerva_operations.opendir = minerva_opendir;
     minerva_operations.readdir = minerva_readdir;
     minerva_operations.getattr = minerva_getattr;
-    minerva_operations.fgetattr = minerva_fgetattr;
     minerva_operations.access = minerva_access;
     minerva_operations.releasedir = minerva_releasedir;
     minerva_operations.write = minerva_write;

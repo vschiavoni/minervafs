@@ -158,9 +158,10 @@ codewrapper::CodeWrapper* get_Hamming_codec(codes:: code_params cparams)
     return codecs[cparams.m];
 }
 
-void* minerva_init(struct fuse_conn_info *conn)
+void* minerva_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
 {
     (void) conn;
+    (void) cfg;
     setup();
     return 0;
 }
@@ -173,8 +174,9 @@ void minerva_destroy(void *private_data)
 
 // Base operation
 
-int minerva_getattr(const char* path, struct stat* stbuf)
+int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info *fi)
 {
+    (void) fi;
     int res = 0;
 
     // Check if the file is decoded in the temp directory
@@ -234,13 +236,6 @@ int minerva_getattr(const char* path, struct stat* stbuf)
     stbuf->st_size = size;
 
     return res;
-}
-
-int minerva_fgetattr(const char *path, struct stat *stbuf,
-                            struct fuse_file_info *fi)
-{
-    (void) fi;
-    return minerva_getattr(path, stbuf);
 }
 
 int minerva_access(const char* path, int mask)
@@ -484,7 +479,7 @@ int minerva_release(const char* path, struct fuse_file_info *fi)
 }
 
 // TODO: update as needed
-int minerva_truncate(const char *path, off_t length)
+int minerva_truncate(const char *path, off_t length, struct fuse_file_info *fi)
 {
     /*
     TODO truncate a minerva file
@@ -500,6 +495,7 @@ int minerva_truncate(const char *path, off_t length)
     7. Store modified file
     8. Delete temp file
     */
+    (void) fi;
 
     std::string permanent_path = get_permanent_path(path);
     if (std::filesystem::is_directory(permanent_path))
@@ -549,8 +545,9 @@ int minerva_truncate(const char *path, off_t length)
     return encode(path);
 }
 
-int minerva_chmod(const char* path, mode_t mode)
+int minerva_chmod(const char* path, mode_t mode, struct fuse_file_info *fi)
 {
+    (void) fi;
     //FIXME It should be possible to chmod files that are not yet in permanent storage
     std::string temporary_path = get_temporary_path(path);
     bool in_temporary_storage = std::filesystem::exists(temporary_path);
@@ -630,9 +627,11 @@ int minerva_mkdir(const char *path, mode_t mode)
 
 int minerva_releasedir(const char *path, struct fuse_file_info *fi)
 {
+    if (strlen(path) == 1 && path[0] == ((char) 7)) {
+        return 0;
+    }
+
     struct minerva_dirp* dirp = get_dirp(fi);
-    (void)path;
-    // TODO: Implement the following properly
     closedir(dirp->dp);
     free(dirp);
     return 0;
@@ -683,10 +682,11 @@ int minerva_opendir(const char *path, struct fuse_file_info *fi)
 
 // TODO: Check if the first if is blogging to read the sub-dir
 int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                           off_t offset, struct fuse_file_info *fi)
+                           off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags  flags)
 {
     (void) offset;
     (void) fi;
+    (void) flags;
     std::string minerva_entry_path = get_permanent_path(path);
 
     if (!std::filesystem::exists(minerva_entry_path))
@@ -701,8 +701,10 @@ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         return -ENOTDIR;
     }
 
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
+
+    enum fuse_fill_dir_flags fill_flags = (fuse_fill_dir_flags) 0;
+    filler(buf, ".", NULL, 0, fill_flags);
+    filler(buf, "..", NULL, 0, fill_flags);
 
     for (const auto& entry : std::filesystem::directory_iterator(minerva_entry_path))
     {
@@ -711,7 +713,7 @@ int minerva_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         {
             continue;
         }
-        filler(buf, entry_name.c_str(), NULL, 0);
+        filler(buf, entry_name.c_str(), NULL, 0, fill_flags);
     }
 
     return 0;
@@ -766,7 +768,8 @@ int minerva_flush(const char* path, struct fuse_file_info* fi) {
     return 0;
 }
 
-int minerva_rename(const char* from, const char* to) {
+int minerva_rename(const char* from, const char* to, unsigned int flags) {
+    (void) flags;
     std::string source = get_temporary_path(from);
     std::string destination = get_temporary_path(to);
 
@@ -814,8 +817,9 @@ int minerva_unlink(const char* path)
     return 0;
 }
 
-int minerva_utimens(const char* path, const struct timespec tv[2])
+int minerva_utimens(const char* path, const struct timespec tv[2], struct fuse_file_info *fi)
 {
+    (void) fi;
     std::string minerva_entry = get_permanent_path(path);
     if (!std::filesystem::exists(minerva_entry))
     {

@@ -23,12 +23,12 @@ def configure(cnf) :
     
     if sys.platform == 'linux' or sys.platform == 'linux2':
         link_flags.append('-lstdc++fs')
-        link_flags.append('-lfuse')
+        link_flags.append('-lfuse3')
 
     if sys.platform == 'darwin':
         link_flags.append('-L/usr/local/opt/llvm/lib')
         cxx_flags.append('-stdlib=libc++')
-        link_flags.append('-lfuse')        
+        link_flags.append('-lfuse3')
 
     cnf.env.append_value('CXXFLAGS', cxx_flags)        
     cnf.env.append_value('LINKFLAGS',
@@ -36,7 +36,7 @@ def configure(cnf) :
     
 def build(bld):
 
-    libs = ['cryptopp', 'fuse']
+    libs = ['cryptopp', 'fuse3']
 
     if sys.platform == 'linux' or sys.platform == 'linux2':
         libs.append('stdc++fs')
