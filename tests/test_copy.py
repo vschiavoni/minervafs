@@ -120,6 +120,7 @@ def teardown_module():
 
 @pytest.fixture(scope="function")
 def before_every_test(request):
+    os.system("echo 3 | sudo tee /proc/sys/vm/drop_caches")
     proc = mount(__MOUNT_POINT)
 
     def fin():
@@ -138,16 +139,6 @@ def test_copy_one_file_in_out(before_every_test):
     assert filecmp.cmp(src, dst, shallow=False)
 
 
-def test_copy_one_file_out_in(before_every_test):
-    data = os.urandom(__DEFAULT_FILE_SIZE_IN_BYTES)
-    src = os.path.join(__WORKSPACE, "out_in.bin")
-    with open(src, "wb") as handle:
-        handle.write(data)
-    dst = os.path.join(__MOUNT_POINT, os.path.basename(src))
-    shutil.copyfile(src, dst)
-    assert filecmp.cmp(src, dst, shallow=False)
-
-
 def test_copy_one_file_in_in(before_every_test):
     data = os.urandom(__DEFAULT_FILE_SIZE_IN_BYTES)
     src = os.path.join(__MOUNT_POINT, "in_in.bin")
@@ -155,5 +146,15 @@ def test_copy_one_file_in_in(before_every_test):
     with open(src, "wb") as handle:
         handle.write(data)
     dst = os.path.join(__MOUNT_POINT, "in_in_copy.bin")
+    shutil.copyfile(src, dst)
+    assert filecmp.cmp(src, dst, shallow=False)
+
+
+def test_copy_one_file_out_in(before_every_test):
+    data = os.urandom(__DEFAULT_FILE_SIZE_IN_BYTES)
+    src = os.path.join(__WORKSPACE, "out_in.bin")
+    with open(src, "wb") as handle:
+        handle.write(data)
+    dst = os.path.join(__MOUNT_POINT, os.path.basename(src))
     shutil.copyfile(src, dst)
     assert filecmp.cmp(src, dst, shallow=False)
