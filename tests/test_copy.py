@@ -3,6 +3,7 @@
 Basic functional tests for minervafs.
 """
 import filecmp
+import json
 import os
 import shutil
 import subprocess
@@ -23,6 +24,17 @@ def build():
     subprocess.run(command, check=True)
 
 
+def clear_backend_directory():
+    with open("../minervafs.json") as handle:
+        configuration = json.load(handle)
+    path = configuration.get("root_folder", "~/.minervafs")
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+        while os.path.isdir(path):
+            print("{:s} still exists!")
+            pass
+
 def mount(directory):
     """
     Mounts a directory.
@@ -33,7 +45,7 @@ def mount(directory):
         os.makedirs(directory, exist_ok=True)
     elif not os.path.isdir(directory):
         raise ValueError("directory argument is not an actual directory {:s}".format(directory))
-    subprocess.run("python3 ../clear.py".split(), check=True)
+    clear_backend_directory()
     subprocess.run("../build/examples/minervafs-example/minervafs_example {:s}".format(directory).split(), check=True)
     while not os.path.ismount(directory):
         time.sleep(1)
@@ -49,6 +61,7 @@ def umount(directory):
     if not os.path.isdir(directory):
         raise ValueError("directory argument is not an actual directory {:s}".format(directory))
     if os.path.ismount(directory):
+        subprocess.run("sync".split(), check=True)
         subprocess.run("fusermount3 -u {:s}".format(directory).split(), check=True)
 
 
