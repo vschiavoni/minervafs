@@ -219,3 +219,25 @@ def test_copy_one_file_out_in(before_every_test):
     dst = os.path.join(__MOUNT_POINT, os.path.basename(src))
     shutil.copyfile(src, dst)
     assert filecmp.cmp(src, dst, shallow=False)
+
+def test_delete_a_non_existing_file(before_every_test):
+    """
+    Tests whether we can delete a file we previously created
+    """
+    src = os.path.join(__WORKSPACE, "non_existing.delete")
+    with pytest.raises(FileNotFoundError):
+        os.unlink(src)
+
+
+def test_delete_a_file(before_every_test):
+    """
+    Tests whether we can delete a file we previously created
+    """
+    data = os.urandom(__DEFAULT_FILE_SIZE_IN_BYTES)
+    src = os.path.join(__WORKSPACE, "data.delete")
+    with open(src, "wb") as handle:
+        handle.write(data)
+    assert os.path.isfile(src)
+    assert __DEFAULT_FILE_SIZE_IN_BYTES == os.path.getsize(src)
+    os.unlink(src)
+    assert not os.path.isfile(src)
