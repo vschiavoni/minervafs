@@ -9,7 +9,6 @@ import random
 import shutil
 import subprocess
 import string
-import time
 
 import pytest
 
@@ -86,8 +85,7 @@ def mount(directory):
     proc.wait(timeout=30)
     assert proc.returncode == 0
     while not is_filesystem_ready(directory):
-        time.sleep(1)
-    time.sleep(1)
+        pass
     return proc
 
 
