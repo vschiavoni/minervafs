@@ -19,7 +19,19 @@ main () {
     # Update an install base dependencies
     apt-get update && \
     apt-get dist-upgrade --yes && \
-    apt-get install build-essential cmake curl git g++ libfuse2 libfuse-dev libssl-dev python wget xz-utils --yes --quiet
+    apt-get install build-essential cmake curl git g++ libssl-dev meson pkg-config python udev wget xz-utils --yes --quiet
+
+    # Install Fuse 3.9.1
+    local cwd="${pwd}"
+    cd /tmp/
+    wget https://github.com/libfuse/libfuse/releases/download/fuse-3.9.1/fuse-3.9.1.tar.xz --quiet
+    tar xaf /tmp/fuse-3.9.1.tar.xz
+    cd fuse-3.9.1
+    mkdir build
+    cd build
+    meson ..
+    ninja && ninja install || exit
+    cd "${cwd}"
 
     # Install specific version of clang
     echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | tee /etc/apt/sources.list.d/llvm.list && \
