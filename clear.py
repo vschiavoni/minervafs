@@ -3,9 +3,9 @@
 A script to clear the backend minervafs folder
 """
 import argparse
-import json
 import os
-import shutil
+
+from tests import utils
 
 __DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "minervafs.json")
 
@@ -21,15 +21,8 @@ def main():
                         help="Path of the configuration file where the path is located",
                         default=__DEFAULT_CONFIG_PATH)
     args = parser.parse_args()
-    if args.path:
-        path = args.path
-    else:
-        with open(args.config_file) as handle:
-            configuration = json.load(handle)
-        path = configuration.get("root_folder", "~/.minervafs")
-    path = os.path.expanduser(path)
-    if os.path.isdir(path):
-        shutil.rmtree(path)
+    utils.clear_backend_directory(path=args.path, config_file=args.config_file)
+
 
 if __name__ == "__main__":
     main()
