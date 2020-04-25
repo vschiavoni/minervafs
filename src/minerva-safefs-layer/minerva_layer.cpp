@@ -1051,11 +1051,11 @@ int decode(const char* path)
 
     minerva::model::data coded_data = minerva_storage.load(filename);
 
-    
-    codes::code_params code_param = extract_code_params(coded_data.coding_configuration);
-    codewrapper::codewrapper* code = get_hamming_codec(code_data.cofig());
-    tartarus::model::raw_data data = code->decode(coded_data.basis_and_deviation_pairs());
-    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data.data))
+    codewrapper::codewrapper* code = get_hamming_codec(coded_data.config());
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> dd = coded_data.basis_and_deviation_pairs();
+//    auto data = code->decode(coded_data.basis_and_deviation_pairs());
+    auto data = code->decode(dd);    
+    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data))
     {
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
         return -1;

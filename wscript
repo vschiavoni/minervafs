@@ -43,7 +43,6 @@ def build(bld):
         
     if sys.platform == 'darwin':
         libs.append('c++fs')
-
         
     bld(name = 'minerva-safefs-layer-includes',
         includes='./src',
