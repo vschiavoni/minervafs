@@ -42,6 +42,7 @@ static const std::string minervafs_identifier_register = "/identifiers";//"/.ide
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
+static const bool minverva_versioning = false; 
 
 static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
@@ -245,8 +246,12 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
     size_t size = std::filesystem::file_size(minerva_entry_path);
     if (size != 0)
     {
-        nlohmann::json obj = tartarus::readers::msgpack_reader(minerva_entry_path);
-        size = obj["file_size"].get<size_t>();
+        auto data = tartarus::readers::vector_disk_reader(minerva_entry_path);
+        size = 0;
+        for (size_t i = 0; i < sizeof(size_t); ++i)
+        {
+            size = (size << (i * 8)) ^ data.at(i); 
+        }
     }
     stbuf->st_size = size;
 
@@ -939,6 +944,7 @@ static void setup()
     minerva_config["fileout_path"] = (base_directory + "/");
     minerva_config["file_format"] = used_file_format;
     minerva_config["indexing_config"] = indexing_config;
+    minerva_config["versioning"] = minverva_versioning;    
 
     minerva_storage = minerva::minerva(minerva_config);
     tartarus::writers::json_writer(config_file_path, minerva_config);
