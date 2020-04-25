@@ -32,5 +32,12 @@
         "method": "semver",
         "major": 10,
         "sources": ["github.com/AgileCloudLab/minerva.git"]
+    },
+    {
+        "name": "harpocrates",
+        "resolver": "git",
+        "method": "semver",
+        "major": 3,
+        "sources": ["github.com/AgileCloudLab/harpocrates.git"]
     }    
 ]
