@@ -1063,8 +1063,9 @@ int decode(const char* path)
     codewrapper::codewrapper* code = get_hamming_codec(coded_data.config());
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> dd = coded_data.basis_and_deviation_pairs();
 //    auto data = code->decode(coded_data.basis_and_deviation_pairs());
-    auto data = code->decode(dd);    
-    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, data))
+    auto data = code->decode(dd);
+    
+    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, std::vector<uint8_t>(data.begin(), data.begin() + coded_data.file_size())))
     {
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
         return -1;
