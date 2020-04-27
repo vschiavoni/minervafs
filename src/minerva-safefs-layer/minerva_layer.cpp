@@ -247,14 +247,6 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
     if (size != 0)
     {
         auto data = tartarus::readers::vector_disk_reader(minerva_entry_path);
-        if (data.size() == 0)
-        {
-            return 1024;
-        }
-        else
-        {
-#include <iostream>
-            std::cout << "laidadida: " << data.size() << std::endl; 
         size = 0;
         for (size_t i = 0; i < sizeof(size_t); ++i)
         {
@@ -262,9 +254,7 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
             next = next << (i * 8);
             size ^= next; 
         }
-
-//        size = 1337;
-        }
+        
     }
     stbuf->st_size = size;
 
