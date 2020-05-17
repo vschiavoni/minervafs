@@ -19,12 +19,6 @@ struct minerva_hierarchy {
 };
 
 /**
- * Returns a text representation of coding parameters
- * @param params The paramters to 
- */
-std::string stringify_code_params(codes::code_params params);
-
-/**
  * Returns the path of the directory hosting the running binary
  * @return Path to the directory containing the binary invoking the function
  */
