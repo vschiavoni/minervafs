@@ -4,7 +4,7 @@ from waflib.Tools.compiler_cxx import cxx_compiler
 # import subprocess
 import os
 import sys
-from waf_au_extensions import utils as au_utility
+
 
 
 APPNAME = 'minerva-safefs-layer' #TODO: REPLACE
@@ -79,8 +79,3 @@ def build(bld):
     # Build Test
     # bld.recurse('test/TEST_NAME')
 
-def test(t):
-    au_utility.run_tests('build/test')
-
-def doc(dc):
-    au_utility.generate_documentation()
