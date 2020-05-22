@@ -10,8 +10,8 @@ def du(dir, fs=None):
     # p: is to get it in byte
     # fs = None assume EXT4
     if not fs == 'zfs':
-        result = subprocess.check_output(['du', '-sb', dir], encoding="utf-8")
-        result = (result.split('\t'))[0]
+        res = subprocess.check_output(['du', '-sb', dir], encoding="utf-8")
+        res = (res.split('\t'))[0]
     else:
         res = subprocess.check_output(['zfs', 'get', '-Hp', 'used', 'zfs'], encoding="utf-8")
         print(res)
