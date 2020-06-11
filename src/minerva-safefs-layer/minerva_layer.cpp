@@ -1065,6 +1065,18 @@ int decode(const char* path)
 //    auto data = code->decode(coded_data.basis_and_deviation_pairs());
     auto data = code->decode(dd);
     
+    // Make sure the parent directory is present for the file to be decoded in the right place
+    std::filesystem::path target_path(minerva_entry_temp_path);
+    std::filesystem::path parent_path = target_path.parent_path();
+    if (!std::filesystem::is_directory(parent_path))
+    {
+        if (!std::filesystem::create_directories(parent_path))
+        {
+            std::cerr << "decode(" << path << "): Could not create parent directory to decode" << std::endl;
+            return -1;
+        }
+    }
+
     if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, std::vector<uint8_t>(data.begin(), data.begin() + coded_data.file_size())))
     {
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
