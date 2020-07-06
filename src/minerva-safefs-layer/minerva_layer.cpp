@@ -1048,8 +1048,6 @@ int encode(const char* path)
     {
         // TODO: load part and encode
         size_t number_of_basis = file_size / n;
-        
-        
     }
     
     codewrapper::codewrapper* code = get_hamming_codec(code_config);
