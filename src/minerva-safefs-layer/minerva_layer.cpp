@@ -1035,9 +1035,23 @@ int encode(const char* path)
 {
     std::string minerva_entry_temp_path = get_temporary_path(path);
     size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
-    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
+//    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
 
     nlohmann::json code_config = get_code_params(file_size);
+    size_t n = code_config["n"].get<size_t>();
+
+    if (n <= file_size)
+    {
+        // todo simple load all data 
+    }
+    else
+    {
+        // TODO: load part and encode
+        size_t number_of_basis = file_size / n;
+        
+        
+    }
+    
     codewrapper::codewrapper* code = get_hamming_codec(code_config);
     std::string filename = get_minerva_relative_path(path);
     auto coded = code->encode(data);
