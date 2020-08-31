@@ -11,6 +11,7 @@
 namespace minerva
 {
     registry::registry() {}
+
     registry::registry(const nlohmann::json& config)
     {
 
@@ -56,6 +57,23 @@ namespace minerva
         {
             m_version.store_version(path, data);
         }
+        else
+        {
+            tartarus::writers::vector_disk_writer(m_fileout_path + "/" + path, data);
+        }
+        
+    }
+
+
+    std::vector<uint8_t> registry::load_file(const std::string& path)
+    {
+        if (m_versioning)
+        {
+            return m_version.load_version(path);
+        }
+        
+        return tartarus::readers::vector_disk_reader(m_fileout_path + "/" + path);
+        
     }
 
     

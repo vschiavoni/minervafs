@@ -1,5 +1,6 @@
 #include "minerva_layer.hpp"
 #include "registry/registry.hpp"
+#include "serialization/serializer.hpp"
 
 #include "utils.hpp"
 
@@ -1123,6 +1124,36 @@ int encode(const char* path)
         registry.store_bases(bases_to_store);         
     }
 
+    std::map<std::vector<uint8_t>, uint64_t> fingerprint_index;
+    std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(bases_deviation_map.size());
+    uint64_t i = 0;
+    size_t j = 0;
+    
+    for (auto it = bases_deviation_map.begin(); it != bases_deviation_map.end(); ++it)
+    {
+        if (fingerprint_index.find(it->first) == fingerprint_index.end())
+        {
+            fingerprint_index[it->first] = i;
+            ++i;
+        }
+        auto pair = std::make_pair(fingerprint_index[it->first], it->second);
+        pairs.at(j) = pair;
+        ++j;
+    }
+
+    std::vector<std::vector<uint8_t>> fingerprints(fingerprint_index.size());
+    for (auto it = fingerprint_index.begin(); it != fingerprint_index.end(); ++it)
+    {
+        fingerprints.at(it->second) = it->first;
+    }
+    fingerprint_index.clear();
+    std::vector<uint8_t> output;
+
+    minerva::serializer::convert_store_structure(fingerprints, pairs, coder->configuration(), file_size, output);
+    fingerprints.clear();
+    pairs.clear();
+    registry.write_file(path, output);
+    output.clear();
 
     // TODO: STORE FILE 
     close(fd);
@@ -1149,12 +1180,39 @@ int decode(const char* path)
     std::string minerva_entry_temp_path = get_temporary_path(path);
     std::string filename = get_minerva_relative_path(path);
 
-    minerva::model::data coded_data = minerva_storage.load(filename);
+    auto input = registry.load_file(filename); //minerva_storage.load(filename);
 
-    codewrapper::codewrapper* code = get_hamming_codec(coded_data.config());
-    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> dd = coded_data.basis_and_deviation_pairs();
-//    auto data = code->decode(coded_data.basis_and_deviation_pairs());
-    auto data = code->decode(dd);
+    std::vector<std::vector<uint8_t>> fingerprints;
+    std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs;
+    nlohmann::json config;
+    size_t file_size = 0;
+
+    minerva::serializer::convert_store_structure(input, fingerprints, pairs, config, file_size);
+    input.clear();
+
+    
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(pairs.size());
+    size_t i = 0;
+
+    for (auto it = pairs.begin(); it != pairs.end(); ++it)
+    {
+        auto pair = std::make_pair(fingerprints.at(it->first), it->second);
+        it->second.clear();
+        coded_pairs.at(i) = pair;
+        ++i;
+    }
+
+    fingerprints.clear();
+    pairs.clear();
+
+    codewrapper::codewrapper code(config);
+    auto data = code.decode(coded_pairs);
+    coded_pairs.clear();
+
+//    codewrapper::codewrapper* code = get_hamming_codec(coded_data.config());
+// //     // std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> dd = coded_data.basis_and_deviation_pairs();
+// // //    auto data = code->decode(coded_data.basis_and_deviation_pairs());
+//    auto data = code->decode(dd);
     
     // Make sure the parent directory is present for the file to be decoded in the right place
     std::filesystem::path target_path(minerva_entry_temp_path);
@@ -1168,7 +1226,7 @@ int decode(const char* path)
         }
     }
 
-    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, std::vector<uint8_t>(data.begin(), data.begin() + coded_data.file_size())))
+    if (!tartarus::writers::vector_disk_writer(minerva_entry_temp_path, std::vector<uint8_t>(data.begin(), data.begin() + file_size)))
     {
         std::cerr << "decode(" << path << "): Could not write decoded data to " << minerva_entry_temp_path << std::endl;
         return -1;
