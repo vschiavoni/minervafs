@@ -2,7 +2,7 @@ import sys
 
 def build(bld):
 
-    libs = ['cryptopp', 'fuse3']
+    libs = ['fuse3']
 
     link_flags = list()
     

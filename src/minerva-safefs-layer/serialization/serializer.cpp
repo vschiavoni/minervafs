@@ -1,6 +1,3 @@
-#ifndef MINERVA_SERIALIZER_HPP
-#define MINERVA_SERIALIZER_HPP
-
 #include "serializer.hpp"
 
 #include <nlohmann/json.hpp>
@@ -338,4 +335,4 @@ inline void convert_index(const std::vector<uint8_t>& input, std::map<std::vecto
 
 
 
-#endif /*MINERVA_SERIALIZER_HPP*/
+
