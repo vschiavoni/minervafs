@@ -1,5 +1,6 @@
 #include "registry.hpp"
 
+
 #include <tartarus/writers.hpp>
 #include <tartarus/readers.hpp>
 
@@ -10,7 +11,55 @@
 namespace minerva
 {
     registry::registry() {}
-    registry::registry(const nlohmann::json& configure) {(void) configure;}
+    registry::registry(const nlohmann::json& config)
+    {
+
+        if (config.find("fileout_path") == config.end() ||
+            config.find("index_path") == config.end() ||
+            config.find("major_group_length") == config.end() ||
+            config.find("minor_group_length") == config.end())             
+        {
+            // TODO: Throw exception
+        }
+        else
+        {
+            m_fileout_path = config["fileout_path"].get<std::string>();
+            m_index_path = config["index_path"].get<std::string>();
+            m_major_length = config["major_group_length"].get<size_t>();
+            m_minor_length = config["minor_group_length"].get<size_t>();            
+        }
+
+        if (config.find("version_path") == config.end())
+        {
+            m_versioning = false;
+        }
+        else
+        {
+            // TODO load version config and create versioning
+            m_versioning = true;
+            m_version = minerva::version(config["version"].get<std::string>());
+        }
+        
+        if (config.find("in_memory") == config.end())
+        {
+            m_in_memory = false; 
+        }
+        else
+        {
+            m_in_memory = config["in_memory"].get<bool>(); 
+        }
+    }
+
+    void registry::write_file(const std::string& path, const std::vector<uint8_t>& data)
+    {
+        if (m_versioning)
+        {
+            m_version.store_version(path, data);
+        }
+    }
+
+    
+//    std::vector<uint8_t> registry::load_file(const std::string& path);    
 
     void registry::store_bases(const std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis)
     {
