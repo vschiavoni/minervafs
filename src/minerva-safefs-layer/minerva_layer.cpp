@@ -52,7 +52,7 @@ static const bool minverva_versioning = false;
 static minerva::registry registry; 
 
 
-static minerva::minerva minerva_storage;
+//static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
 static std::mutex of_mutex;
 static minerva::file_format used_file_format = minerva::file_format::JSON;
@@ -927,7 +927,6 @@ static void setup()
     {
         nlohmann::json config = tartarus::readers::json_reader(config_file_path);
         registry = minerva::registry(config); 
-        minerva_storage = minerva::minerva(config);
         if (!std::filesystem::exists(temp_directory))
         {
             std::system((MKDIR + " " + temp_directory).c_str());
@@ -950,16 +949,20 @@ static void setup()
         std::system((MKDIR + " " + temp_directory).c_str());
     }
 
-    nlohmann::json indexing_config;
-    indexing_config["indexing_path"] = (indexing_directory);
+//    nlohmann::json indexing_config;
+//    indexing_config["indexing_path"] = (indexing_directory);
     
     nlohmann::json minerva_config;
     minerva_config["fileout_path"] = (base_directory + "/");
-    minerva_config["file_format"] = used_file_format;
-    minerva_config["indexing_config"] = indexing_config;
-    minerva_config["versioning"] = minverva_versioning;    
+//    minerva_config["file_format"] = used_file_format;
+    //   minerva_config["indexing_config"] = indexing_config;
+    minerva_config["index_path"] = (indexing_directory);    
+    minerva_config["versioning"] = minverva_versioning;
+    minerva_config["major_group_length"] = 10;
+    minerva_config["minor_group_length"] = 4;    
+    
 
-    minerva_storage = minerva::minerva(minerva_config);
+    registry = minerva::registry(minerva_config);     
     tartarus::writers::json_writer(config_file_path, minerva_config);
 }
 

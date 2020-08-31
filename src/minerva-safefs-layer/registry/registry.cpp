@@ -1,12 +1,14 @@
 #include "registry.hpp"
 
-
 #include <tartarus/writers.hpp>
 #include <tartarus/readers.hpp>
 
 #include <filesystem>
 
 #include <sstream>
+#include <iostream>
+
+#include <stdexcept>
 
 namespace minerva
 {
@@ -15,11 +17,33 @@ namespace minerva
     registry::registry(const nlohmann::json& config)
     {
 
+        if (config.find("fileout_path") == config.end())             
+        {
+            throw std::runtime_error("Missing fileout");
+            // TODO: Throw exception
+        }
+
+        if (
+            config.find("index_path") == config.end())             
+        {
+            throw std::runtime_error("index");
+            // TODO: Throw exception
+        }
+
+        if (
+            config.find("major_group_length") == config.end() ||
+            config.find("minor_group_length") == config.end())             
+        {
+            throw std::runtime_error("major minor config");
+            // TODO: Throw exception
+        }        
+
         if (config.find("fileout_path") == config.end() ||
             config.find("index_path") == config.end() ||
             config.find("major_group_length") == config.end() ||
             config.find("minor_group_length") == config.end())             
         {
+            throw std::runtime_error("Missing config");
             // TODO: Throw exception
         }
         else
@@ -94,7 +118,13 @@ namespace minerva
 
         for (auto it = to_store.begin(); it != to_store.end(); ++it)
         {
-            tartarus::writers::vector_disk_writer(get_basis_path(it->first), it->second);
+            std::filesystem::path basis_path(get_basis_path(it->first));
+            if (!std::filesystem::exists(basis_path.parent_path()))
+            {
+                std::filesystem::create_directories(basis_path.parent_path());
+            }
+            
+            tartarus::writers::vector_disk_writer(basis_path.string(), it->second);
             if (m_in_memory)
             {
                 m_in_memory_registry[it->first] = 1; 
@@ -144,6 +174,11 @@ namespace minerva
     {
         std::string fingerprint_str = convert_fingerprint_to_string(fingerprint);
 
+        std::cout << "index_path " << m_index_path << std::endl;
+        std::cout << "fingeprint path: " << m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
+            "/" + fingerprint_str.substr((fingerprint.size() - 1 - m_minor_length)) + "/" + fingerprint_str << std::endl;
+        
+        
         return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
             "/" + fingerprint_str.substr((fingerprint.size() - 1 - m_minor_length)) + "/" + fingerprint_str;
         
