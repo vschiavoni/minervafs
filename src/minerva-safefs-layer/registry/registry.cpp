@@ -1,6 +1,6 @@
 #include "registry.hpp"
 
-#include <tartarus/writer.hpp>
+#include <tartarus/writers.hpp>
 
 #include <filesystem>
 
