@@ -11,15 +11,17 @@ namespace minerva
 class registry
 {
 public:
+    registry();    
     registry(const nlohmann::json& configure);
 
     void store_bases(const std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis);
+    void load_bases(std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis);
+    void delete_bases(std::vector<std::vector<uint8_t>>& fingerprints); 
 
 private:
 
-    void store_basis(const std::vector<uint8_t>& fingerprint, const std::vector<uint8_t>& basis);
+    
     bool basis_exists(const std::vector<uint8_t>& fingerprint);
-
 
     std::string convert_fingerprint_to_string(const std::vector<uint8_t>& fingerprint);
     

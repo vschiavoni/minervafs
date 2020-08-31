@@ -13,33 +13,10 @@ namespace minerva
 namespace serializer
 {
 
-/// Convert number to vector
-template<typename Type>
-inline void convert_natural_number(const Type input, std::vector<uint8_t>& output)
-{
-    output = std::vector<uint8_t>(sizeof(input));
 
-    for (size_t i = 0; i < sizeof(input); ++i)
-    {
-        output.at(i) = (input >> (i * 8)); 
-    }
-}
-
-/// Convert vector to number
-template<typename Type>
-inline void convert_natural_number(const std::vector<uint8_t>& input, Type& output)
-{
-    output = 0;
-    for (size_t i = 0; i < input.size(); ++i)
-    {
-        Type next = input.at(i);
-        next = next << (i * 8);
-        output ^= next;
-    }
-}
     
 /// Convert json to vector
-inline void convert_json(const nlohmann::json& input, std::vector<uint8_t>& out)
+void convert_json(const nlohmann::json& input, std::vector<uint8_t>& out)
 {
     std::string json_as_string = input.dump();
     out = std::vector<uint8_t>(json_as_string.length());
@@ -50,7 +27,7 @@ inline void convert_json(const nlohmann::json& input, std::vector<uint8_t>& out)
 }
 
 /// Convert vector to json
-inline void convert_json(const std::vector<uint8_t>& input, nlohmann::json& out)
+void convert_json(const std::vector<uint8_t>& input, nlohmann::json& out)
 {
     std::string json_as_string;
     for (const auto& b : input)
@@ -61,7 +38,7 @@ inline void convert_json(const std::vector<uint8_t>& input, nlohmann::json& out)
 }
 
 /// Convert fingerprints to vector
-inline void convert_fingerprints(const std::vector<std::vector<uint8_t>>& input, std::vector<uint8_t>& output)
+void convert_fingerprints(const std::vector<std::vector<uint8_t>>& input, std::vector<uint8_t>& output)
 {
     //output = std::vector<uint8_t>(input.at(0).size() * input.size());
     if (input.empty())
@@ -81,7 +58,7 @@ inline void convert_fingerprints(const std::vector<std::vector<uint8_t>>& input,
 }
 
 /// Convert vector to fingerprints
-inline void convert_fingerprints(const std::vector<uint8_t>& input, size_t fingerprint_size, std::vector<std::vector<uint8_t>>& output)
+void convert_fingerprints(const std::vector<uint8_t>& input, size_t fingerprint_size, std::vector<std::vector<uint8_t>>& output)
 {
     size_t number_of_fingerprints = input.size() / fingerprint_size;
 
@@ -102,7 +79,7 @@ inline void convert_fingerprints(const std::vector<uint8_t>& input, size_t finge
     
 
 /// Converts an input of index and deviation pairs to a vector of uint8_t 
-inline void convert_pairs(const std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& input, std::vector<uint8_t>& output)
+void convert_pairs(const std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& input, std::vector<uint8_t>& output)
 {
 //    output = std::vector<uint8_t>((sizeof(input.at(0).first) + input.at(0).second.size()) * input.size());
     if (input.empty())
@@ -125,7 +102,7 @@ inline void convert_pairs(const std::vector<std::pair<uint64_t, std::vector<uint
 }
 
 /// Converts a vector of uin8_t to list of index and deviation pairs 
-inline void convert_pairs(const std::vector<uint8_t>& input, size_t size_of_deviation, std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& output)
+void convert_pairs(const std::vector<uint8_t>& input, size_t size_of_deviation, std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& output)
 {
     size_t offset = 0;
 
@@ -144,7 +121,7 @@ inline void convert_pairs(const std::vector<uint8_t>& input, size_t size_of_devi
     }
 }
 
-inline void convert_store_structure(const std::vector<std::vector<uint8_t>>& fingerprints,
+void convert_store_structure(const std::vector<std::vector<uint8_t>>& fingerprints,
                                     const std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& pairs,
                                     const nlohmann::json& coding_config,
                                     const size_t file_size,
@@ -231,7 +208,7 @@ inline void convert_store_structure(const std::vector<std::vector<uint8_t>>& fin
     output.insert(output.begin() + offset, pairs_data.begin(), pairs_data.end());
 }
 
-inline void convert_store_structure(const std::vector<uint8_t>& input,
+void convert_store_structure(const std::vector<uint8_t>& input,
                                     std::vector<std::vector<uint8_t>>& fingerprints,
                                     std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& pairs,
                                     nlohmann::json& config,
@@ -275,7 +252,7 @@ inline void convert_store_structure(const std::vector<uint8_t>& input,
     convert_pairs(std::vector<uint8_t>(input.begin() + offset, input.end()), deviation_size, pairs);
 }
 
-inline void convert_index(std::map<std::vector<uint8_t>, uint64_t>& input, std::vector<uint8_t>& output)
+void convert_index(std::map<std::vector<uint8_t>, uint64_t>& input, std::vector<uint8_t>& output)
 {
     if (input.size() == 0)
     {
@@ -305,7 +282,7 @@ inline void convert_index(std::map<std::vector<uint8_t>, uint64_t>& input, std::
 
 }
 
-inline void convert_index(const std::vector<uint8_t>& input, std::map<std::vector<uint8_t>, uint64_t>& output)
+void convert_index(const std::vector<uint8_t>& input, std::map<std::vector<uint8_t>, uint64_t>& output)
 {
 
     if (input.size() == 0)

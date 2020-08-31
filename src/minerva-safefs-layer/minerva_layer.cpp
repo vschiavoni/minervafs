@@ -1,4 +1,6 @@
 #include "minerva_layer.hpp"
+#include "registry/registry.hpp"
+
 #include "utils.hpp"
 
 #include <atomic>
@@ -23,8 +25,8 @@
 #include <unistd.h>
 
 #include <codewrapper/codewrapper.hpp>
-#include <minerva/minerva.hpp>
-#include <minerva/model/data.hpp>
+#include <minerva/minerva.hpp> // TODO: REMOVE 
+#include <minerva/model/data.hpp> // TODO REMOVE
 
 #include <tartarus/model/coded_pair.hpp>
 
@@ -45,6 +47,9 @@ static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 static const bool minverva_versioning = false; 
+
+static minerva::registry registry; 
+
 
 static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
@@ -920,6 +925,7 @@ static void setup()
     if ( std::filesystem::exists(config_file_path))
     {
         nlohmann::json config = tartarus::readers::json_reader(config_file_path);
+        registry = minerva::registry(config); 
         minerva_storage = minerva::minerva(config);
         if (!std::filesystem::exists(temp_directory))
         {
@@ -1081,7 +1087,7 @@ int encode(const char* path)
         return -1; 
     }
 
-    std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
+
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map(number_of_chunks); 
     size_t bd_pair_index = 0; 
     while ((size_t)bytes_loaded < file_size)
@@ -1097,26 +1103,29 @@ int encode(const char* path)
         bytes_loaded += count;
 
         auto coded_data = coder->encode(data);
-
+        std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
         for (const auto& pair : coded_data)
         {
             std::vector<uint8_t> fingerprint;
             harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
 
             
-            //TODO: USE THIS if (bases_to_store.find(fingerprint) == bases_to_store.end() && registry.basis_exists())
             if (bases_to_store.find(fingerprint) == bases_to_store.end())
             {
                 bases_to_store[fingerprint] = pair.first; 
             }
-
+            
             auto bd_pair = std::make_pair(fingerprint, pair.second);
             bases_deviation_map.at(bd_pair_index) = bd_pair;
             ++bd_pair_index;
         }
+
+        registry.store_bases(bases_to_store);         
     }
 
-    close(fd); 
+
+    // TODO: STORE FILE 
+    close(fd);
     sync();
     return 0;
 
