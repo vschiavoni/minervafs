@@ -173,11 +173,6 @@ namespace minerva
     std::string registry::get_basis_path(const std::vector<uint8_t>& fingerprint)
     {
         std::string fingerprint_str = convert_fingerprint_to_string(fingerprint);
-
-        std::cout << "index_path " << m_index_path << std::endl;
-        std::cout << "fingeprint path: " << m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
-            "/" + fingerprint_str.substr((fingerprint.size() - 1 - m_minor_length)) + "/" + fingerprint_str << std::endl;
-        
         
         return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
             "/" + fingerprint_str.substr((fingerprint.size() - 1 - m_minor_length)) + "/" + fingerprint_str;

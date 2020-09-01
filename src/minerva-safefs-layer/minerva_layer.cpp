@@ -1120,6 +1120,7 @@ int encode(const char* path)
             }
             
             auto bd_pair = std::make_pair(fingerprint, pair.second);
+            bases_deviation_map.push_back(bd_pair);
             bases_deviation_map.at(bd_pair_index) = bd_pair;
             ++bd_pair_index;
         }
@@ -1131,7 +1132,7 @@ int encode(const char* path)
     std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(bases_deviation_map.size());
     uint64_t i = 0;
     size_t j = 0;
-    
+
     for (auto it = bases_deviation_map.begin(); it != bases_deviation_map.end(); ++it)
     {
         if (fingerprint_index.find(it->first) == fingerprint_index.end())
@@ -1143,7 +1144,7 @@ int encode(const char* path)
         pairs.at(j) = pair;
         ++j;
     }
-
+    
     std::vector<std::vector<uint8_t>> fingerprints(fingerprint_index.size());
     for (auto it = fingerprint_index.begin(); it != fingerprint_index.end(); ++it)
     {
@@ -1158,9 +1159,10 @@ int encode(const char* path)
     registry.write_file(path, output);
     output.clear();
 
-    // TODO: STORE FILE 
     close(fd);
     sync();
+
+    std::filesystem::remove(minerva_entry_temp_path);
     return 0;
 
     
@@ -1193,19 +1195,30 @@ int decode(const char* path)
     minerva::serializer::convert_store_structure(input, fingerprints, pairs, config, file_size);
     input.clear();
 
+    std::map<std::vector<uint8_t>, std::vector<uint8_t>> fingerprint_basis;
+    for (const auto& fingerprint : fingerprints)
+    {
+        std::vector<uint8_t> basis;
+        fingerprint_basis[fingerprint] = basis;
+    }
+
+    registry.load_bases(fingerprint_basis);
     
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(pairs.size());
     size_t i = 0;
 
+    
+
     for (auto it = pairs.begin(); it != pairs.end(); ++it)
     {
-        auto pair = std::make_pair(fingerprints.at(it->first), it->second);
+        auto pair = std::make_pair(fingerprint_basis[fingerprints.at(it->first)], it->second);
         it->second.clear();
         coded_pairs.at(i) = pair;
         ++i;
     }
 
     fingerprints.clear();
+    fingerprint_basis.clear();
     pairs.clear();
 
     codewrapper::codewrapper code(config);
