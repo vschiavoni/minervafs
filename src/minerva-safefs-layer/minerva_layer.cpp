@@ -1055,8 +1055,9 @@ int encode(const char* path)
     size_t n = code_config["n"].get<size_t>();
 
 
-    size_t number_of_chunks;
+    size_t number_of_chunks = 0;
     off_t bytes_loaded = 0;
+    (void) bytes_loaded;
     size_t chunks_to_load = 100;
     size_t remainder; 
 
@@ -1073,6 +1074,8 @@ int encode(const char* path)
         number_of_chunks = file_size / n; 
     }
 
+    size_t chunks_left = number_of_chunks;
+    size_t bytes_left = file_size;
 
     chunks_to_load = 100;
 
@@ -1091,42 +1094,92 @@ int encode(const char* path)
         return -1; 
     }
 
-
-    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map(number_of_chunks); 
-    size_t bd_pair_index = 0; 
-    while ((size_t)bytes_loaded < file_size)
+    size_t number_of_pairs = number_of_chunks;
+    if (remainder)
     {
-        size_t count = n * chunks_to_load;
-        if ((bytes_loaded + count) >= file_size && remainder)
-        {
-            count = file_size - bytes_loaded; 
-        }
-        
-        std::vector<uint8_t> data(count);
-        pread(fd, data.data(), count, bytes_loaded);
-        bytes_loaded += count;
+        ++number_of_pairs;
+    }
 
-        auto coded_data = coder->encode(data);
+    std::cout << "num of pairs " << number_of_pairs << std::endl;
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map(number_of_pairs);
+    size_t bd_pair_index = bases_deviation_map.size() - 1;
+    while (chunks_left != 0)
+    {
+
+        size_t count = n * chunks_to_load;
+
+        if (bytes_left == file_size && remainder)
+        {
+            count += remainder;
+        }
+
+        off_t offset = bytes_left - count;
+        bytes_left -= count;
+
+        std::vector<uint8_t> data(count);
+        pread(fd, data.data(), count, offset);
+
+//        ftruncate(fd, bytes_left);
+
+        chunks_left -= chunks_to_load;
+
+        auto pairs = coder->encode(data);
         std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
-        for (const auto& pair : coded_data)
+
+        for (int i = pairs.size(); i > 0; --i)
         {
             std::vector<uint8_t> fingerprint;
-            harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
-
-            
+            harpocrates::hashing::vectors::hash(pairs.at(i - 1).first, fingerprint, harpocrates::hashing::hash_type::SHA1);
             if (bases_to_store.find(fingerprint) == bases_to_store.end())
             {
-                bases_to_store[fingerprint] = pair.first; 
+                bases_to_store[fingerprint] = pairs.at(i - 1).first;
             }
-            
-            auto bd_pair = std::make_pair(fingerprint, pair.second);
-            bases_deviation_map.push_back(bd_pair);
+
+            auto bd_pair = std::make_pair(fingerprint, pairs.at(i - 1).second);
             bases_deviation_map.at(bd_pair_index) = bd_pair;
-            ++bd_pair_index;
+            --bd_pair_index;
         }
 
         registry.store_bases(bases_to_store);         
+            
     }
+    
+    // std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map(number_of_pairs); 
+    // size_t bd_pair_index = 0; 
+    // while ((size_t)bytes_loaded < file_size)
+    // {
+    //     size_t count = n * chunks_to_load;
+    //     if ((bytes_loaded + count) >= file_size && remainder)
+    //     {
+    //         count = file_size - bytes_loaded; 
+    //     }
+        
+    //     std::vector<uint8_t> data(count);
+    //     pread(fd, data.data(), count, bytes_loaded);
+    //     bytes_loaded += count;
+
+    //     auto coded_data = coder->encode(data);
+    //     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
+    //     for (const auto& pair : coded_data)
+    //     {
+    //         std::vector<uint8_t> fingerprint;
+    //         harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
+
+            
+    //         if (bases_to_store.find(fingerprint) == bases_to_store.end())
+    //         {
+    //             bases_to_store[fingerprint] = pair.first; 
+    //         }
+            
+    //         auto bd_pair = std::make_pair(fingerprint, pair.second);
+    //         bases_deviation_map.push_back(bd_pair);
+    //         bases_deviation_map.at(bd_pair_index) = bd_pair;
+    //         std::cout << "pair index " << bd_pair_index << std::endl;
+    //         ++bd_pair_index;
+    //     }
+
+    //     registry.store_bases(bases_to_store);         
+    // }
 
     std::map<std::vector<uint8_t>, uint64_t> fingerprint_index;
     std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(bases_deviation_map.size());
@@ -1163,6 +1216,7 @@ int encode(const char* path)
     sync();
 
     std::filesystem::remove(minerva_entry_temp_path);
+    std::cout << "w00p" << std::endl;
     return 0;
 
     
