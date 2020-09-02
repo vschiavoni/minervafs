@@ -39,7 +39,7 @@ def copy(input, output):
 def main(configFilePath):
 
     config = None
-    with open(configFilePathm, r) as configFile:
+    with open(configFilePath, 'r') as configFile:
         data = configFile.read()
         config = json.loads(data)
 
