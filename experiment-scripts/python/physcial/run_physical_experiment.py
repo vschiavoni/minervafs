@@ -7,7 +7,7 @@ import os
 
 def writeCsv(file, row):
 
-    with open(file) as csvFile:
+    with open(file, 'a') as csvFile:
         writer = csv.writer(csvFile)
         writer.writerow(row)
 
