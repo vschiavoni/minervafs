@@ -1,0 +1,7 @@
+{
+    "file_list": "./minerva-safefs-layer/file_lists/vdi_files.txt",
+    "output_dir": "./mfs_mnt",
+    "minerva_dir": "./ext4/mfs",
+    "interval": 100,
+    "result_file": "./minerva-safefes-layer/results/physical/vdi_mfs.csv"
+}
