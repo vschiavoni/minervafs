@@ -68,7 +68,7 @@ def main(configFilePath):
     print('Starting experiment with config: {!s}'.format(configFilePath))
     print('Writing result to: {!s}'.format(resultFile))
     print('Running with file list: {!s}'.format(fileList))
-    print('Total number of files: {!s}'.format(len(file)))
+    print('Total number of files: {!s}'.format(len(files)))
     print('Copiying files to: {!s}'.format(outputDir))
     print('Recording storage usage every {!s} file'.format(interval))
     if dedupRatio:
