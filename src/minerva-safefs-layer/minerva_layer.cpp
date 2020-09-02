@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include <codewrapper/codewrapper.hpp>
-#include <minerva/minerva.hpp> // TODO: REMOVE 
+#include <minerva/minerva.hpp> // TODO: REMOVE /
 #include <minerva/model/data.hpp> // TODO REMOVE
 
 #include <tartarus/model/coded_pair.hpp>
@@ -1038,10 +1038,10 @@ nlohmann::json get_code_params(size_t file_size)
     return config;
 }
 
-
+[[deprecated]]
 void set_file_format(minerva::file_format file_format)
 {
-    used_file_format = file_format;
+     used_file_format = file_format;
 }
 
 int encode(const char* path)

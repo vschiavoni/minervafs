@@ -12,7 +12,7 @@
         "sources": [
             "github.com/AgileCloudLab/tartarus.git"
         ],
-        "major": 7,
+        "major": 8,
         "method": "semver",
         "resolver": "git",
         "name": "tartarus"
@@ -27,17 +27,17 @@
         "name": "codewrapper"
     },
     {
-        "name": "minerva",
-        "resolver": "git",
-        "method": "semver",
-        "major": 10,
-        "sources": ["github.com/AgileCloudLab/minerva.git"]
-    },
-    {
         "name": "harpocrates",
         "resolver": "git",
         "method": "semver",
         "major": 3,
         "sources": ["github.com/AgileCloudLab/harpocrates.git"]
-    }    
+    },
+    {
+        "name": "minerva",
+        "resolver": "git",
+        "method": "semver",
+        "major": 10,
+        "sources": ["github.com/AgileCloudLab/minerva.git"]
+    }
 ]

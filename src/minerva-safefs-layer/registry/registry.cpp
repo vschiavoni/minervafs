@@ -83,7 +83,7 @@ namespace minerva
         }
         else
         {
-            tartarus::writers::vector_disk_writer(m_fileout_path + "/" + path, data);
+            tartarus::writers::vector_disk_writer(m_fileout_path + "/" + path, data, true);
         }
         
     }
@@ -124,7 +124,7 @@ namespace minerva
                 std::filesystem::create_directories(basis_path.parent_path());
             }
             
-            tartarus::writers::vector_disk_writer(basis_path.string(), it->second);
+            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);
             if (m_in_memory)
             {
                 m_in_memory_registry[it->first] = 1; 
