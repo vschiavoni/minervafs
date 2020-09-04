@@ -53,9 +53,9 @@ namespace minerva
     // https://numberduck.com/Blog/?nPostId=3
     void compressor::compress_gzip(std::vector<uint8_t>& data)
     {
-        std::vector<uint8_t> compressed_data(data.size());
+        unsigned long compressed_size = data.size() + 15;
 
-        unsigned long compressed_size = compressed_data.size(); 
+        std::vector<uint8_t> compressed_data(compressed_size);
         
         int result = compress2(compressed_data.data(), &compressed_size, data.data(), (unsigned long) data.size(), 9);
 
@@ -63,6 +63,7 @@ namespace minerva
         {
             throw std::runtime_error("Failed to compress data");
         }
+        
         data = std::vector<uint8_t>(compressed_data.begin(), compressed_data.begin() + compressed_size);
     }
 

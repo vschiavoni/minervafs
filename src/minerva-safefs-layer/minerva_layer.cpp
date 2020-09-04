@@ -47,7 +47,11 @@ static const std::string minervafs_identifier_register = "/identifiers";//"/.ide
 static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
-static const bool minverva_versioning = false; 
+
+static bool minverva_versioning = false;
+static bool minverva_compression = false;
+static nlohmann::json minerva_versioning_config;
+static nlohmann::json minverva_compression_config;
 
 static minerva::registry registry; 
 
@@ -894,6 +898,8 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 // Helper functions
 static void load_config(std::string path)
 {
+    std::cout << "I AM HERE" << std::endl;
+    
     assert(std::filesystem::exists(path));
     std::ifstream ifs(path, std::ifstream::in);
     nlohmann::json configuration = nlohmann::json::parse(ifs);
@@ -908,6 +914,18 @@ static void load_config(std::string path)
         std::string home_directory(home);
         minervafs_root_folder.replace(0, 1, home_directory);
     }
+
+    if (configuration.find("compression") != configuration.end())
+    {
+        minverva_compression_config = configuration["compression"].get<nlohmann::json>();
+        minverva_compression = true;
+    }
+
+    if (configuration.find("versioning") != configuration.end())
+    {
+        minerva_versioning_config = configuration["versioning"].get<nlohmann::json>();
+        minverva_versioning = true;
+    }    
 }
 
 static void setup()
@@ -960,7 +978,16 @@ static void setup()
     minerva_config["versioning"] = minverva_versioning;
     minerva_config["major_group_length"] = 10;
     minerva_config["minor_group_length"] = 4;    
-    
+
+    if (minverva_versioning)
+    {
+        minerva_config["versioning"] = minerva_versioning_config;
+    }
+
+    if (minverva_compression)
+    {
+        minerva_config["compression"] = minverva_compression_config;
+    }
 
     registry = minerva::registry(minerva_config);     
     tartarus::writers::json_writer(config_file_path, minerva_config);
