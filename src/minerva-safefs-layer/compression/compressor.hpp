@@ -18,7 +18,9 @@ class compressor
 
 public:
 
+    compressor(); 
     compressor(compressor_algorithm algorithm, size_t basis_size);
+    compressor(compressor_algorithm algorithm); 
 
     void compress(const std::string& filename);
     void compress(std::vector<uint8_t>& data);

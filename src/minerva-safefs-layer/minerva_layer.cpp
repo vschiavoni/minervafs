@@ -52,9 +52,10 @@ static bool minverva_versioning = false;
 static bool minverva_compression = false;
 static nlohmann::json minerva_versioning_config;
 static nlohmann::json minverva_compression_config;
+static nlohmann::json coding_config; 
 
 static minerva::registry registry; 
-
+static codewrapper::codewrapper* coder; 
 
 //static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
@@ -915,9 +916,24 @@ static void load_config(std::string path)
         minervafs_root_folder.replace(0, 1, home_directory);
     }
 
+    if (configuration.find("code") != configuration.end())
+    {
+        auto code_config = configuration["code"].get<nlohmann::json>();
+        std::cout << code_config.dump() << std::endl; 
+        coder = new codewrapper::codewrapper(code_config); 
+    }
+    else
+    {
+        // TODO: Throw exception 
+    }
+
     if (configuration.find("compression") != configuration.end())
     {
         minverva_compression_config = configuration["compression"].get<nlohmann::json>();
+        if (minverva_compression_config.find("basis_size") == minverva_compression_config.end())
+        {
+            minverva_compression_config["basis_size"] = coder->get_k(); 
+        }
         minverva_compression = true;
     }
 
@@ -925,7 +941,7 @@ static void load_config(std::string path)
     {
         minerva_versioning_config = configuration["versioning"].get<nlohmann::json>();
         minverva_versioning = true;
-    }    
+    }
 }
 
 static void setup()
@@ -972,13 +988,14 @@ static void setup()
     
     nlohmann::json minerva_config;
     minerva_config["fileout_path"] = (base_directory + "/");
-//    minerva_config["file_format"] = used_file_format;
-    //   minerva_config["indexing_config"] = indexing_config;
     minerva_config["index_path"] = (indexing_directory);    
     minerva_config["versioning"] = minverva_versioning;
     minerva_config["major_group_length"] = 10;
     minerva_config["minor_group_length"] = 4;    
 
+
+    minerva_config["code"] = coding_config; 
+    
     if (minverva_versioning)
     {
         minerva_config["versioning"] = minerva_versioning_config;
@@ -988,6 +1005,7 @@ static void setup()
     {
         minerva_config["compression"] = minverva_compression_config;
     }
+    
 
     registry = minerva::registry(minerva_config);     
     tartarus::writers::json_writer(config_file_path, minerva_config);
@@ -1078,7 +1096,8 @@ int encode(const char* path)
     
 //    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
 
-    nlohmann::json code_config = get_code_params(file_size);
+//    nlohmann::json code_config = get_code_params(file_size);
+    auto code_config = coder->configuration(); 
     size_t n = code_config["n"].get<size_t>();
 
 
@@ -1108,7 +1127,7 @@ int encode(const char* path)
         chunks_to_load = number_of_chunks; 
     }
     
-    codewrapper::codewrapper* coder = get_hamming_codec(code_config); // TODO: Use a single instance
+//    codewrapper::codewrapper* coder = get_hamming_codec(code_config); // TODO: Use a single instance
     
     
     int fd = open(minerva_entry_temp_path.c_str(), O_RDWR);
@@ -1248,8 +1267,8 @@ int decode(const char* path)
     fingerprint_basis.clear();
     pairs.clear();
 
-    codewrapper::codewrapper code(config);
-    auto data = code.decode(coded_pairs);
+//    codewrapper::codewrapper code(config);
+    auto data = coder->decode(coded_pairs);
     coded_pairs.clear();
 
 //    codewrapper::codewrapper* code = get_hamming_codec(coded_data.config());

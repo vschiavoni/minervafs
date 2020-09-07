@@ -64,6 +64,23 @@ namespace minerva
             m_versioning = true;
             m_version = minerva::version(config["version"].get<std::string>());
         }
+
+        std::cout << "MINERVA IS HERE" << std::endl; 
+        if (config.find("compression") != config.end())
+        {
+
+            auto compression_config = config["compression"].get<nlohmann::json>();
+
+            if (compression_config.find("basis_size") == compression_config.end())
+            {
+                m_compressor = minerva::compressor(compression_config["algorithm"].get<minerva::compressor_algorithm>());
+            }
+            else
+            {
+                m_compressor = minerva::compressor(compression_config["algorithm"].get<minerva::compressor_algorithm>(), compression_config["basis_size"].get<size_t>());
+            }
+            m_compression = true; 
+        }
         
         if (config.find("in_memory") == config.end())
         {

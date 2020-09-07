@@ -3,11 +3,22 @@
 #include <zlib.h>
 
 #include <stdexcept>
+#include <iostream>
 
 namespace minerva
 {
+    compressor::compressor(){}
+    
     compressor::compressor(compressor_algorithm algorithm, size_t basis_size) : m_algorithm(algorithm),
-                                                                                m_basis_size(basis_size) {}
+                                                                                m_basis_size(basis_size)
+    {
+        std::cout << "COMPRESSION!" << std::endl; 
+    }
+
+    compressor::compressor(compressor_algorithm algorithm) : m_algorithm(algorithm), m_basis_size(0)
+    {
+        std::cout << "COMPRESSION!" << std::endl; 
+    }
 
     void compressor::compress(const std::string& filename)
     {
@@ -22,6 +33,12 @@ namespace minerva
 
     void compressor::compress(std::vector<uint8_t>& data)
     {
+
+        if (m_basis_size == 0)
+        {
+            m_basis_size = data.size(); 
+        }
+        
         switch (m_algorithm)
         {
         case compressor_algorithm::GZIP:

@@ -1,4 +1,5 @@
 #include "../version/version.hpp"
+#include "../compression/compressor.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -36,8 +37,10 @@ private:
     bool m_in_memory;
 
     bool m_versioning;
+    bool m_compression; 
 
     minerva::version m_version;
+    minerva::compressor m_compressor; 
     
     std::map<std::vector<uint8_t>, size_t> m_in_memory_registry;
     
