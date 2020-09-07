@@ -65,7 +65,6 @@ namespace minerva
             m_version = minerva::version(config["version"].get<std::string>());
         }
 
-        std::cout << "MINERVA IS HERE" << std::endl; 
         if (config.find("compression") != config.end())
         {
 
@@ -143,7 +142,15 @@ namespace minerva
             }
             
 //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);
-            tartarus::writers::vector_disk_writer(basis_path.string(), it->second);
+
+            auto basis = it->second;
+            if (m_compression)
+            {
+                std::cout << "compress" << std::endl;
+                m_compressor.compress(basis);
+            }
+            
+            tartarus::writers::vector_disk_writer(basis_path.string(), basis);
             if (m_in_memory)
             {
                 m_in_memory_registry[it->first] = 1; 
@@ -155,7 +162,14 @@ namespace minerva
     {
         for (auto it = fingerprint_basis.begin(); it != fingerprint_basis.end(); ++it)
         {
-            fingerprint_basis[it->first] = tartarus::readers::vector_disk_reader(get_basis_path(it->first));    
+            auto basis = tartarus::readers::vector_disk_reader(get_basis_path(it->first));
+            if (m_compression)
+            {
+                std::cout << "uncompress" << std::endl;                
+                m_compressor.uncompress(basis);
+            }
+            
+            fingerprint_basis[it->first] = basis;
         }
     }
 
