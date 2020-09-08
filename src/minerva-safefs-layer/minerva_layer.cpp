@@ -920,7 +920,9 @@ static void load_config(std::string path)
     {
         auto code_config = configuration["code"].get<nlohmann::json>();
         std::cout << code_config.dump() << std::endl; 
-        coder = new codewrapper::codewrapper(code_config); 
+        coder = new codewrapper::codewrapper(code_config);
+        std::cout << "LADIDAIDAIIDAIDIDI " << std::to_string(coder->get_k()) << std::endl;
+        std::cout << "lallalllallallallallllalall << " << codes::code_type::HAMMING_CODE << std::endl;
     }
     else
     {
