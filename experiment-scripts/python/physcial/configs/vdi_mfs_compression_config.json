@@ -3,5 +3,5 @@
     "output_dir": "./mfs_mnt",
     "minerva_dir": "./experiment_output/.minervafs",
     "interval": 100,
-    "result_file": "./minerva-safefes-layer/results/physical/vdi_mfs.csv"
+    "result_file": "./minerva-safefes-layer/results/physical/vdi_mfs_compression.csv"
 }

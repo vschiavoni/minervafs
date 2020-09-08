@@ -1,0 +1,6 @@
+{
+    "file_list": "./minerva-safefs-layer/file_list/vdi_files.txt",
+    "output_dir": "./zfs",
+    "interval": 100,
+    "result_file": "./minerva-safefs-layer/results/physical/vdi_zfs_with_lz4.csv"
+}
