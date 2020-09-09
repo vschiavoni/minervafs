@@ -146,7 +146,6 @@ namespace minerva
             auto basis = it->second;
             if (m_compression)
             {
-                std::cout << "compress" << std::endl;
                 m_compressor.compress(basis);
             }
 //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
@@ -165,7 +164,6 @@ namespace minerva
             auto basis = tartarus::readers::vector_disk_reader(get_basis_path(it->first));
             if (m_compression)
             {
-                std::cout << "uncompress" << std::endl;                
                 m_compressor.uncompress(basis);
             }
             
@@ -206,9 +204,9 @@ namespace minerva
     std::string registry::get_basis_path(const std::vector<uint8_t>& fingerprint)
     {
         std::string fingerprint_str = convert_fingerprint_to_string(fingerprint);
-        
+
         return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
-            "/" + fingerprint_str.substr(0 + m_major_length, m_minor_length) + fingerprint_str;
+            "/" + fingerprint_str.substr(0 + m_major_length, m_minor_length) + "/" + fingerprint_str;
         
     }
 }
