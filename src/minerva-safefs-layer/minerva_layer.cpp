@@ -403,7 +403,62 @@ std::vector<uint8_t> decode(std::string path, off_t offset, size_t size)
     (void) path;
     (void) offset;
     (void) size;
-    std::vector<uint8_t> data;
+    std::string permanent_path = get_permanent_path(path.c_str());
+    if (!std::filesystem::exists(permanent_path))
+    {
+        throw std::runtime_error("Cannot find file " + permanent_path);
+    }
+
+    //Load file metadata
+    std::string placeholder_path = get_minerva_relative_path(path.c_str());
+    auto placeholder = registry.load_file(placeholder_path); //minerva_storage.load(filename);
+
+    std::vector<std::vector<uint8_t>> all_fingerprints;
+    std::vector<std::pair<uint64_t, std::vector<uint8_t>>> all_pairs;
+    nlohmann::json config;
+    size_t file_size = 0;
+
+    minerva::serializer::convert_store_structure(placeholder, all_fingerprints, all_pairs, config, file_size);
+    placeholder.clear();
+
+    //Filter fingerprints and bases to decode the chunks we are interested in
+    size_t chunk_size = config["n"].get<uint32_t>();
+    size_t first_chunk = offset / chunk_size;
+    size_t last_chunk = ceil((offset + size) / chunk_size);
+    size_t chunks = last_chunk - first_chunk;
+
+    std::vector<std::vector<uint8_t>> fingerprints(chunks);
+    std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(chunks);
+    std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases;
+
+    for (auto i = first_chunk; i <= last_chunk; i++)
+    {
+        std::vector<uint8_t> fingerprint = fingerprints.at(i);
+        std::vector<uint8_t> empty_basis;
+        bases[fingerprint] = empty_basis;
+        pairs.push_back(all_pairs.at(i));
+    }
+
+    //Load our bases
+    registry.load_bases(bases);
+
+
+    //Line all the bases and deviations
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(pairs.size());
+    size_t i = 0;
+    for (auto it = pairs.begin(); it != pairs.end(); ++it)
+    {
+        auto pair = std::make_pair(bases[fingerprints.at(it->first)], it->second);
+        it->second.clear();
+        coded_pairs.at(i) = pair;
+        ++i;
+    }
+    fingerprints.clear();
+    pairs.clear();
+
+    std::vector<uint8_t> data = coder->decode(coded_pairs);
+    coded_pairs.clear();
+    
     return data;
 }
 
