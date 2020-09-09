@@ -205,8 +205,8 @@ namespace minerva
     {
         std::string fingerprint_str = convert_fingerprint_to_string(fingerprint);
 
-        return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) + "/" + fingerprint_str;
-            // "/" + fingerprint_str.substr(0 + m_major_length, m_minor_length) + "/" + fingerprint_str;
+        return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) + "/"
+            + fingerprint_str.substr(0 + m_major_length, m_minor_length) + "/" + fingerprint_str;
         
     }
 }
