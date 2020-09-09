@@ -477,42 +477,19 @@ std::vector<uint8_t> decode(const char* path, off_t offset, size_t size)
 int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
-
-
     std::string minerva_entry_path = get_permanent_path(path);
-    std::string filename = std::filesystem::path(path).filename().string();
-
-    std::string minerva_entry_temp_path = get_temporary_path(path);
-
-
-    int fd;
-    int res;
 
     (void) fi;
-    if (!std::filesystem::exists(minerva_entry_temp_path))
+    if (!std::filesystem::exists(minerva_entry_path))
     {
-        decode(path);
+        return -ENOENT;
     }
 
     std::vector<uint8_t> data = decode(path, offset, size);
 
-    fd = fi->fh;
-
-    if (fd == -1)
-    {
-        return -errno;
-    }
-
-    res = pread(fd, buf, size, offset);
-
-    if (res == -1)
-    {
-        res = -errno;
-    }
-
     memcpy(buf, data.data(), size);
 
-    return res;
+    return size;
 }
 
 // TODO: Inject the usage of GDD
