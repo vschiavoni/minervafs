@@ -7,6 +7,7 @@
 #include <fuse3/fuse.h>
 #include <dirent.h>
 #include <string>
+#include <vector>
 
 static short JSON = 0;
 static short BSON = 1;
@@ -86,3 +87,13 @@ int minerva_listxattr(const char* path, char* list, size_t size);
 
 // Helper function
 void set_file_format(int file_format);
+
+
+/**
+ * Reads parts of a file limited by an offset and an number
+ * @param   path    Path to the file
+ * @param   offset  Start of the data to read
+ * @param   size    Length of the data to read
+ * @return  The data read from the file
+ */
+std::vector<uint8_t> decode(std::string path, off_t offset, size_t size);

@@ -398,6 +398,15 @@ int minerva_open(const char* path, struct fuse_file_info* fi)
     return -ENOENT;
 }
 
+std::vector<uint8_t> decode(std::string path, off_t offset, size_t size)
+{
+    (void) path;
+    (void) offset;
+    (void) size;
+    std::vector<uint8_t> data;
+    return data;
+}
+
 int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
@@ -434,7 +443,6 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     return res;
 }
-
 
 // TODO: Inject the usage of GDD
 int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
