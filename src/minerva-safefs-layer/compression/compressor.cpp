@@ -85,16 +85,22 @@ namespace minerva
 
         std::cout << "[after] compressed_size: " << compressed_size << std::endl;        
 
-//        data = std::vector<uin8_t>(compressed)
+        if (data.size() <= static_cast<size_t>(compressed_size))
+        {
+            return;
+        }
+
         data = std::vector<uint8_t>(compressed_size);
         std::memcpy(data.data(), compressed_data.data(), compressed_size);
-//        std::memcpy
 
-//            compressed_data;//std::vector<uint8_t>(compressed_data.begin(), compressed_data.begin() + compressed_size);
     }
 
     void compressor::uncompress_gzip(std::vector<uint8_t>& data)
     {
+        if (data.size() == m_basis_size)
+        {
+            return;
+        }
         std::vector<uint8_t> uncompressed_data(m_basis_size, 0);
 
         unsigned long uncompressed_size = m_basis_size;

@@ -141,7 +141,7 @@ namespace minerva
                 std::filesystem::create_directories(basis_path.parent_path());
             }
             
-//            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);
+
 
             auto basis = it->second;
             if (m_compression)
@@ -149,7 +149,7 @@ namespace minerva
                 std::cout << "compress" << std::endl;
                 m_compressor.compress(basis);
             }
-            
+//            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
             tartarus::writers::vector_disk_writer(basis_path.string(), basis);
             if (m_in_memory)
             {
@@ -208,7 +208,7 @@ namespace minerva
         std::string fingerprint_str = convert_fingerprint_to_string(fingerprint);
         
         return m_index_path + "/" + fingerprint_str.substr(0, m_major_length) +
-            "/" + fingerprint_str.substr((fingerprint.size() - 1 - m_minor_length)) + "/" + fingerprint_str;
+            "/" + fingerprint_str.substr(0 + m_major_length, m_minor_length) + fingerprint_str;
         
     }
 }
