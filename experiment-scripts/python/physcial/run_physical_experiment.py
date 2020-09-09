@@ -15,7 +15,7 @@ def writeCsv(file, row):
 def run_df(dir):
 
     result = subprocess.check_output(['df', dir], encoding='utf-8')
-    result = (((result.split('\n'))[1]).split(' '))[2]
+    result = (((result.split('\n'))[1]).split(' '))[3]
     return result
 
 def dedupZfs():
@@ -94,9 +94,10 @@ def main(configFilePath):
         if file.endswith('\n'):
             file = file[:-1]
         print('File {!s}/{!s}: '.format(i, len(files), file))
+        
         file = './' + file
         originSize += os.path.getsize(file)
-        copy(file, outPutdir)
+        copy(file, outputDir)
 
         finalSize = 0
         recordedDedupRatio = 0
@@ -115,6 +116,7 @@ def main(configFilePath):
             writeCsv(resultFile, [i, originSize, finalSize, recordedDedupRatio])
         else:
             writeCsv(resultFile, [i, originSize, finalSize])
+        i = i + 1            
             
     print('Copied {!s} files'.format(i))
     print('Written result to: {!s}'.format(resultFile))

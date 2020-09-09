@@ -1,5 +1,5 @@
 {
-    "root_folder": "~/.minervafs",
+    "root_folder": "~/experiment_output/.minervafs",
     "code": {
         "m": 15,
         "n": 4096,
