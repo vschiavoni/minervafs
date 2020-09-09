@@ -992,7 +992,7 @@ static void setup()
     minerva_config["fileout_path"] = (base_directory + "/");
     minerva_config["index_path"] = (indexing_directory);    
     minerva_config["versioning"] = minverva_versioning;
-    minerva_config["major_group_length"] = 10;
+    minerva_config["major_group_length"] = 4;
     minerva_config["minor_group_length"] = 4;    
 
 
