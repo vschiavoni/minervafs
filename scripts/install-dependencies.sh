@@ -19,7 +19,7 @@ main () {
     # Update an install base dependencies
     apt-get update && \
     apt-get dist-upgrade --yes && \
-    apt-get install build-essential cmake curl git g++ libssl-dev meson pkg-config python udev wget xz-utils --yes --quiet
+    apt-get install build-essential cmake curl git g++ libssl-dev meson pkg-config python udev wget xz-utils zlib1g-dev --yes --quiet
 
     # Install Fuse 3.9.1
     local cwd="${pwd}"
