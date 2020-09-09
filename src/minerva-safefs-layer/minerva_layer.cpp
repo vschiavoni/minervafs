@@ -398,19 +398,19 @@ int minerva_open(const char* path, struct fuse_file_info* fi)
     return -ENOENT;
 }
 
-std::vector<uint8_t> decode(std::string path, off_t offset, size_t size)
+std::vector<uint8_t> decode(const char* path, off_t offset, size_t size)
 {
     (void) path;
     (void) offset;
     (void) size;
-    std::string permanent_path = get_permanent_path(path.c_str());
+    std::string permanent_path = get_permanent_path(path);
     if (!std::filesystem::exists(permanent_path))
     {
         throw std::runtime_error("Cannot find file " + permanent_path);
     }
 
     //Load file metadata
-    std::string placeholder_path = get_minerva_relative_path(path.c_str());
+    std::string placeholder_path = get_minerva_relative_path(path);
     auto placeholder = registry.load_file(placeholder_path); //minerva_storage.load(filename);
 
     std::vector<std::vector<uint8_t>> all_fingerprints;
@@ -427,37 +427,49 @@ std::vector<uint8_t> decode(std::string path, off_t offset, size_t size)
     size_t last_chunk = ceil((offset + size) / chunk_size);
     size_t chunks = last_chunk - first_chunk;
 
+    std::cout << "\tThere are " << chunks << " chunks to load (" << first_chunk << " to " << last_chunk << ")" << std::endl;
+
     std::vector<std::vector<uint8_t>> fingerprints(chunks);
     std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(chunks);
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases;
 
-    for (auto i = first_chunk; i <= last_chunk; i++)
+    for (auto i = first_chunk; i < last_chunk; i++)
     {
-        std::vector<uint8_t> fingerprint = fingerprints.at(i);
+        std::vector<uint8_t> fingerprint = all_fingerprints.at(i);
+        fingerprints[i] = all_fingerprints.at(i);
         std::vector<uint8_t> empty_basis;
         bases[fingerprint] = empty_basis;
-        pairs.push_back(all_pairs.at(i));
+        pairs[i] = all_pairs.at(i);
     }
-
-    //Load our bases
+    std::cout << "\tThere are " << bases.size() << " bases to load" << std::endl;
+    std::cout << "\tThere are " << pairs.size() << " pairs to load" << std::endl;
+    //Load the bases
     registry.load_bases(bases);
-
 
     //Line all the bases and deviations
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(pairs.size());
     size_t i = 0;
     for (auto it = pairs.begin(); it != pairs.end(); ++it)
     {
-        auto pair = std::make_pair(bases[fingerprints.at(it->first)], it->second);
+        auto fingerprint = bases[fingerprints.at(it->first)];
+        auto base =  it->second;
+        auto pair = std::make_pair(fingerprint, base);
         it->second.clear();
         coded_pairs.at(i) = pair;
         ++i;
     }
-    fingerprints.clear();
-    pairs.clear();
 
+    std::cout << "\tAssembled " << coded_pairs.size() << " pairs to be decoded" << std::endl;
     std::vector<uint8_t> data = coder->decode(coded_pairs);
+    
+    //Cleanup
     coded_pairs.clear();
+    fingerprints.clear();
+    all_fingerprints.clear();
+    pairs.clear();
+    all_pairs.clear();
+    
+    //FIXME trim if necessary
     
     return data;
 }
@@ -482,6 +494,8 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         decode(path);
     }
 
+    std::vector<uint8_t> data = decode(path, offset, size);
+
     fd = fi->fh;
 
     if (fd == -1)
@@ -495,6 +509,8 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     {
         res = -errno;
     }
+
+    memcpy(buf, data.data(), size);
 
     return res;
 }

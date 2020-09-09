@@ -96,4 +96,4 @@ void set_file_format(int file_format);
  * @param   size    Length of the data to read
  * @return  The data read from the file
  */
-std::vector<uint8_t> decode(std::string path, off_t offset, size_t size);
+std::vector<uint8_t> decode(const char* path, off_t offset, size_t size);
