@@ -80,6 +80,10 @@ namespace minerva
             }
             m_compression = true; 
         }
+        else
+        {
+            m_compression = false; 
+        }
         
         if (config.find("in_memory") == config.end())
         {
@@ -148,6 +152,8 @@ namespace minerva
             {
                 m_compressor.compress(basis);
             }
+
+            std::cout << "basis size: " << basis.size() << std::endl;
 //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
             tartarus::writers::vector_disk_writer(basis_path.string(), basis);
             if (m_in_memory)

@@ -1140,7 +1140,7 @@ int encode(const char* path)
     }
 
 
-    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map(number_of_chunks); 
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map;//(number_of_chunks); 
     size_t bd_pair_index = 0; 
     while ((size_t)bytes_loaded < file_size)
     {
@@ -1169,7 +1169,7 @@ int encode(const char* path)
             
             auto bd_pair = std::make_pair(fingerprint, pair.second);
             bases_deviation_map.push_back(bd_pair);
-            bases_deviation_map.at(bd_pair_index) = bd_pair;
+//            bases_deviation_map.at(bd_pair_index) = bd_pair;
             ++bd_pair_index;
         }
 
