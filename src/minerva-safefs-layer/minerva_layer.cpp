@@ -35,6 +35,7 @@
 #include <tartarus/writers.hpp>
 
 #include <harpocrates/hashing.hpp>
+#include <aloha/aloha.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -55,7 +56,8 @@ static nlohmann::json minverva_compression_config;
 static nlohmann::json coding_config; 
 
 static minerva::registry registry; 
-static codewrapper::codewrapper* coder; 
+static codewrapper::codewrapper* coder;
+static aloha::aloha alog; 
 
 //static minerva::minerva minerva_storage;
 static std::map<std::string, std::atomic_uint> open_files;
@@ -918,11 +920,9 @@ static void load_config(std::string path)
 
     if (configuration.find("code") != configuration.end())
     {
-        auto code_config = configuration["code"].get<nlohmann::json>();
-        std::cout << code_config.dump() << std::endl; 
-        coder = new codewrapper::codewrapper(code_config);
-        std::cout << "LADIDAIDAIIDAIDIDI " << std::to_string(coder->get_k()) << std::endl;
-        std::cout << "lallalllallallallallllalall << " << codes::code_type::HAMMING_CODE << std::endl;
+        coding_config = configuration["code"].get<nlohmann::json>();
+        coder = new codewrapper::codewrapper(coding_config);
+
     }
     else
     {
@@ -954,6 +954,7 @@ static void setup()
     auto path_to_config = std::filesystem::path(get_binary_directory()).parent_path().parent_path().parent_path() / "minervafs.json";
     load_config(path_to_config.string());
 
+    alog = aloha::aloha();
     std::string base_directory = minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
     std::string temp_directory = base_directory + minervafs_temp;
@@ -992,8 +993,8 @@ static void setup()
     minerva_config["fileout_path"] = (base_directory + "/");
     minerva_config["index_path"] = (indexing_directory);    
     minerva_config["versioning"] = minverva_versioning;
-    minerva_config["major_group_length"] = 4;
-    minerva_config["minor_group_length"] = 4;    
+    minerva_config["major_group_length"] = 2;
+    minerva_config["minor_group_length"] = 2;    
 
 
     minerva_config["code"] = coding_config; 
@@ -1009,8 +1010,10 @@ static void setup()
     }
     
 
+    std::cout << minerva_config.dump() << std::endl;
     registry = minerva::registry(minerva_config);     
     tartarus::writers::json_writer(config_file_path, minerva_config);
+    
 }
 
 ///
@@ -1091,96 +1094,80 @@ void set_file_format(minerva::file_format file_format)
     used_file_format = file_format;
 }
 
+
 int encode(const char* path)
 {
-    std::string minerva_entry_temp_path = get_temporary_path(path);
-    size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
-    
-//    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
+    auto entry_path = get_temporary_path(path);
+    size_t file_size = std::filesystem::file_size(entry_path);
 
-//    nlohmann::json code_config = get_code_params(file_size);
-    auto code_config = coder->configuration(); 
-    size_t n = code_config["n"].get<size_t>();
+    size_t n = (coder->configuration())["n"].get<size_t>();
 
-
-    size_t number_of_chunks;
-    off_t bytes_loaded = 0;
+    size_t num_of_chunks;
+    off_t off = 0;
     size_t chunks_to_load = 100;
-    size_t remainder; 
+    size_t chunks_loaded = 0;
+    size_t remainder;
 
-    if ((remainder = file_size % n) != 0)
+    num_of_chunks = file_size / n;
+    remainder = file_size - (n *  num_of_chunks);
+
+    if (num_of_chunks < chunks_to_load)
     {
-        number_of_chunks = (file_size - remainder) / n;
-        if (number_of_chunks == 0)
-        {
-            number_of_chunks = 1; 
-        }
+        chunks_to_load = num_of_chunks;
     }
-    else
-    {
-        number_of_chunks = file_size / n; 
-    }
+         
 
-
-    chunks_to_load = 100;
-
-    if (chunks_to_load > number_of_chunks)
-    {
-        chunks_to_load = number_of_chunks; 
-    }
-    
-//    codewrapper::codewrapper* coder = get_hamming_codec(code_config); // TODO: Use a single instance
-    
-    
-    int fd = open(minerva_entry_temp_path.c_str(), O_RDWR);
+    auto fd = open(entry_path.c_str(), O_RDWR);
     if (fd == -1)
     {
         // TODO: Throw error
-        return -1; 
+        return -1;
     }
 
-
-    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map;//(number_of_chunks); 
-    size_t bd_pair_index = 0; 
-    while ((size_t)bytes_loaded < file_size)
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map;
+    std::map<std::vector<uint8_t>, uint8_t> seen_bases;
+    while((size_t) off < file_size)
     {
         size_t count = n * chunks_to_load;
-        if ((bytes_loaded + count) >= file_size && remainder)
-        {
-            count = file_size - bytes_loaded; 
-        }
-        
-        std::vector<uint8_t> data(count);
-        pread(fd, data.data(), count, bytes_loaded);
-        bytes_loaded += count;
 
-        auto coded_data = coder->encode(data);
+
+        chunks_loaded += chunks_to_load;
+        
+        if (chunks_loaded == num_of_chunks)
+        {
+            count += remainder;
+        }
+
+        std::vector<uint8_t> data(count);
+        pread(fd, data.data(), count, off);
+
+        off += count;
+
+        auto pairs = coder->encode(data);
+
         std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
-        for (const auto& pair : coded_data)
+        for (const auto& pair : pairs)
         {
             std::vector<uint8_t> fingerprint;
             harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
-
-            
-            if (bases_to_store.find(fingerprint) == bases_to_store.end())
+            if (seen_bases.find(fingerprint) == seen_bases.end())
             {
-                bases_to_store[fingerprint] = pair.first; 
+                bases_to_store[fingerprint] = pair.first;
+                seen_bases[fingerprint] = 1;
             }
-            
+
             auto bd_pair = std::make_pair(fingerprint, pair.second);
             bases_deviation_map.push_back(bd_pair);
-//            bases_deviation_map.at(bd_pair_index) = bd_pair;
-            ++bd_pair_index;
         }
 
-        registry.store_bases(bases_to_store);         
+        registry.store_bases(bases_to_store);
     }
 
     std::map<std::vector<uint8_t>, uint64_t> fingerprint_index;
     std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(bases_deviation_map.size());
-    uint64_t i = 0;
+    uint64_t i =0;
     size_t j = 0;
-
+    
     for (auto it = bases_deviation_map.begin(); it != bases_deviation_map.end(); ++it)
     {
         if (fingerprint_index.find(it->first) == fingerprint_index.end())
@@ -1188,44 +1175,171 @@ int encode(const char* path)
             fingerprint_index[it->first] = i;
             ++i;
         }
+
         auto pair = std::make_pair(fingerprint_index[it->first], it->second);
         pairs.at(j) = pair;
         ++j;
     }
-    
+
     std::vector<std::vector<uint8_t>> fingerprints(fingerprint_index.size());
+
     for (auto it = fingerprint_index.begin(); it != fingerprint_index.end(); ++it)
     {
         fingerprints.at(it->second) = it->first;
     }
     fingerprint_index.clear();
-    std::vector<uint8_t> output;
 
-    minerva::serializer::convert_store_structure(fingerprints, pairs, coder->configuration(), file_size, output);
-    fingerprints.clear();
-    pairs.clear();
-    registry.write_file(path, output);
-    output.clear();
+    std::vector<uint8_t> out;
 
+    minerva::serializer::convert_store_structure(fingerprints, pairs, coder->configuration(), file_size, out);
+    registry.write_file(path, out);
     close(fd);
     sync();
 
-    std::filesystem::remove(minerva_entry_temp_path);
-    return 0;
-
+    std::filesystem::remove(entry_path);
+    alog.info("Encoding completed");
+    return 0;    
     
-    
-    // codewrapper::codewrapper* code = get_hamming_codec(code_config);
-    // std::string filename = get_minerva_relative_path(path);
-    // auto coded = code->encode(data);
-
-    // if (!minerva_storage.store(filename, static_cast<uint32_t>(file_size), coded, code_config))
-    // {
-    //     std::cerr << "encode(" << path << "): Did not store file provided" << std::endl;
-    //     return -errno;
-    // }
-
 }
+
+
+// int encode(const char* path)
+// {
+//     alog.info("Start encoding");
+//     std::string minerva_entry_temp_path = get_temporary_path(path);
+//     size_t file_size = std::filesystem::file_size(minerva_entry_temp_path);
+    
+// //    std::vector<uint8_t> data = tartarus::readers::vector_disk_reader(minerva_entry_temp_path);
+
+// //    nlohmann::json code_config = get_code_params(file_size);
+//     auto code_config = coder->configuration(); 
+//     size_t n = code_config["n"].get<size_t>();
+
+
+//     size_t number_of_chunks;
+//     off_t bytes_loaded = 0;
+//     size_t chunks_to_load = 100;
+//     size_t remainder; 
+
+//     if ((remainder = file_size % n) != 0)
+//     {
+//         number_of_chunks = (file_size - remainder) / n;
+//         if (number_of_chunks == 0)
+//         {
+//             number_of_chunks = 1; 
+//         }
+//     }
+//     else
+//     {
+//         number_of_chunks = file_size / n; 
+//     }
+
+
+//     chunks_to_load = 100;
+
+//     if (chunks_to_load > number_of_chunks)
+//     {
+//         chunks_to_load = number_of_chunks; 
+//     }
+    
+// //    codewrapper::codewrapper* coder = get_hamming_codec(code_config); // TODO: Use a single instance
+    
+    
+//     int fd = open(minerva_entry_temp_path.c_str(), O_RDWR);
+//     if (fd == -1)
+//     {
+//         // TODO: Throw error
+//         return -1; 
+//     }
+
+
+//     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> bases_deviation_map;//(number_of_chunks); 
+//     size_t bd_pair_index = 0; 
+//     while ((size_t)bytes_loaded < file_size)
+//     {
+//         size_t count = n * chunks_to_load;
+//         if ((bytes_loaded + count) >= file_size && remainder)
+//         {
+//             count = file_size - bytes_loaded; 
+//         }
+        
+//         std::vector<uint8_t> data(count);
+//         pread(fd, data.data(), count, bytes_loaded);
+//         bytes_loaded += count;
+
+//         auto coded_data = coder->encode(data);
+//         std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
+//         for (const auto& pair : coded_data)
+//         {
+//             std::vector<uint8_t> fingerprint;
+//             harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
+
+            
+//             if (bases_to_store.find(fingerprint) == bases_to_store.end())
+//             {
+//                 bases_to_store[fingerprint] = pair.first; 
+//             }
+            
+//             auto bd_pair = std::make_pair(fingerprint, pair.second);
+//             bases_deviation_map.push_back(bd_pair);
+// //            bases_deviation_map.at(bd_pair_index) = bd_pair;
+//             ++bd_pair_index;
+//         }
+
+//         registry.store_bases(bases_to_store);         
+//     }
+
+//     std::map<std::vector<uint8_t>, uint64_t> fingerprint_index;
+//     std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs(bases_deviation_map.size());
+//     uint64_t i = 0;
+//     size_t j = 0;
+
+//     for (auto it = bases_deviation_map.begin(); it != bases_deviation_map.end(); ++it)
+//     {
+//         if (fingerprint_index.find(it->first) == fingerprint_index.end())
+//         {
+//             fingerprint_index[it->first] = i;
+//             ++i;
+//         }
+//         auto pair = std::make_pair(fingerprint_index[it->first], it->second);
+//         pairs.at(j) = pair;
+//         ++j;
+//     }
+    
+//     std::vector<std::vector<uint8_t>> fingerprints(fingerprint_index.size());
+//     for (auto it = fingerprint_index.begin(); it != fingerprint_index.end(); ++it)
+//     {
+//         fingerprints.at(it->second) = it->first;
+//     }
+//     fingerprint_index.clear();
+//     std::vector<uint8_t> output;
+
+//     minerva::serializer::convert_store_structure(fingerprints, pairs, coder->configuration(), file_size, output);
+//     fingerprints.clear();
+//     pairs.clear();
+//     registry.write_file(path, output);
+//     output.clear();
+
+//     close(fd);
+//     sync();
+
+//     std::filesystem::remove(minerva_entry_temp_path);
+//     alog.info("Encoding completed");
+//     return 0;
+
+    
+    
+//     // codewrapper::codewrapper* code = get_hamming_codec(code_config);
+//     // std::string filename = get_minerva_relative_path(path);
+//     // auto coded = code->encode(data);
+
+//     // if (!minerva_storage.store(filename, static_cast<uint32_t>(file_size), coded, code_config))
+//     // {
+//     //     std::cerr << "encode(" << path << "): Did not store file provided" << std::endl;
+//     //     return -errno;
+//     // }
+
+// }
 
 int decode(const char* path)
 {

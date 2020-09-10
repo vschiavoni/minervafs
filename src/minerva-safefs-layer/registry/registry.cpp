@@ -150,10 +150,14 @@ namespace minerva
             auto basis = it->second;
             if (m_compression)
             {
+                std::cout << "Compress basis" << std::endl;
                 m_compressor.compress(basis);
+
+                std::cout << "basis size after compress" << basis.size() << std::endl;
             }
 
-            std::cout << "basis size: " << basis.size() << std::endl;
+            std::cout << basis_path.string() << std::endl;
+
 //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
             tartarus::writers::vector_disk_writer(basis_path.string(), basis);
             if (m_in_memory)

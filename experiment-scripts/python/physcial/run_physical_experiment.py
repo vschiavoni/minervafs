@@ -14,8 +14,8 @@ def writeCsv(file, row):
         
 def run_df(dir):
 
-    result = subprocess.check_output(['df', dir], encoding='utf-8')
-    result = (((result.split('\n'))[1]).split(' '))[3]
+    result = subprocess.check_output(['du', '-s', '-B', '1', dir], encoding='utf-8')
+    result = (((result.split('\n'))[1]).split(' '))[0]
     return result
 
 def dedupZfs():
@@ -95,7 +95,7 @@ def main(configFilePath):
             file = file[:-1]
         print('File {!s}/{!s}: '.format(i, len(files), file))
         
-        file = './' + file
+        file = file
         originSize += os.path.getsize(file)
         copy(file, outputDir)
 

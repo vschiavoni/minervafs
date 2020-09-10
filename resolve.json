@@ -39,5 +39,14 @@
         "method": "semver",
         "major": 3,
         "sources": ["github.com/AgileCloudLab/harpocrates.git"]
+    },
+    {
+        "sources": [
+            "github.com/AgileCloudLab/aloha.git"
+        ],
+        "major": 2,
+        "method": "semver",
+        "resolver": "git",
+        "name": "aloha"
     }    
 ]
