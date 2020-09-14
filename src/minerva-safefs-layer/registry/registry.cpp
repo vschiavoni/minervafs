@@ -76,7 +76,20 @@ namespace minerva
             }
             else
             {
-                m_compressor = minerva::compressor(compression_config["algorithm"].get<minerva::compressor_algorithm>(), compression_config["basis_size"].get<size_t>());
+                auto algorithm = compression_config["algorithm"].get<minerva::compressor_algorithm>();
+                auto basis_size = compression_config["basis_size"].get<size_t>();
+
+                if (compression_config.find("level") != compression_config.end())
+                {
+                    m_compressor = minerva::compressor(algorithm, basis_size,
+                                                       compression_config["level"].get<uint8_t>());
+                }
+                else
+                {
+                    m_compressor = minerva::compressor(algorithm, basis_size);
+                }
+                
+
             }
             m_compression = true; 
         }
@@ -145,18 +158,11 @@ namespace minerva
                 std::filesystem::create_directories(basis_path.parent_path());
             }
             
-
-
             auto basis = it->second;
             if (m_compression)
             {
-                std::cout << "Compress basis" << std::endl;
                 m_compressor.compress(basis);
-
-                std::cout << "basis size after compress" << basis.size() << std::endl;
             }
-
-            std::cout << basis_path.string() << std::endl;
 
 //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
             tartarus::writers::vector_disk_writer(basis_path.string(), basis);

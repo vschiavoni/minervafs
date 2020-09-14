@@ -10,8 +10,9 @@ namespace minerva
 {
     compressor::compressor(){}
     
-    compressor::compressor(compressor_algorithm algorithm, size_t basis_size) : m_algorithm(algorithm),
-                                                                                m_basis_size(basis_size)
+    compressor::compressor(compressor_algorithm algorithm, size_t basis_size, uint8_t level) : m_algorithm(algorithm),
+                                                                                               m_basis_size(basis_size),
+                                                                                               m_level(level)
     {
     }
 
@@ -74,7 +75,9 @@ namespace minerva
 
         std::vector<uint8_t> compressed_data(compressed_size);
 
-        int result = compress2(compressed_data.data(), &compressed_size, data.data(), (unsigned long) data.size(), 9);
+//        int result = compress2(compressed_data.data(), &compressed_size, data.data(), (unsigned long) data.size(), 9);
+        int result = compress2(compressed_data.data(), &compressed_size, data.data(),
+                               (unsigned long) data.size(), m_level);        
 
         if (result != Z_OK)
         {

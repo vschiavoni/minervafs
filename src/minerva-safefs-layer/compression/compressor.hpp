@@ -19,7 +19,7 @@ class compressor
 public:
 
     compressor(); 
-    compressor(compressor_algorithm algorithm, size_t basis_size);
+    compressor(compressor_algorithm algorithm, size_t basis_size, uint8_t level=0);
     compressor(compressor_algorithm algorithm); 
 
     void compress(const std::string& filename);
@@ -38,6 +38,7 @@ private:
 
     compressor_algorithm m_algorithm;
     size_t m_basis_size;
+    uint8_t m_level;
 };
 }
 
