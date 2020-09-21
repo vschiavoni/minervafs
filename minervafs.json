@@ -6,5 +6,9 @@
         "r": 1,
         "mgf": 256, 
         "code_type": 1
+    },
+    "compression": {
+        "algorithm": 0,
+        "level": 9
     }
 }

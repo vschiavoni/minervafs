@@ -1,7 +1,7 @@
 {
-    "file_list": "./minerva-safefs-layer/file_lists/vdi_files.txt",
+    "file_list": "./minerva-safefs-layer/file_list/vdi_files.txt",
     "output_dir": "./mfs_mnt",
     "minerva_dir": "./experiment_output/.minervafs",
     "interval": 100,
-    "result_file": "./minerva-safefes-layer/results/physical/vdi_mfs_compression.csv"
+    "result_file": "./minerva-safefs-layer/results/physical/vdi_mfs_compression.csv"
 }
