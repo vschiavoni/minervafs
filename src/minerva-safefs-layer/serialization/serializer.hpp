@@ -65,6 +65,7 @@ inline void convert_natural_number(const std::vector<uint8_t>& input, Type& outp
                                  const size_t file_size,
                                  std::vector<uint8_t>& output);
 
+    /// TODO: document
     void convert_store_structure(const std::vector<uint8_t>& input,
                                  std::vector<std::vector<uint8_t>>& fingerprints,
                                  std::vector<std::pair<uint64_t, std::vector<uint8_t>>>& pairs,

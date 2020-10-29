@@ -409,37 +409,114 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
 
-
+    // Get the place holder file path
     std::string minerva_entry_path = get_permanent_path(path);
-    std::string filename = std::filesystem::path(path).filename().string();
-
-    std::string minerva_entry_temp_path = get_temporary_path(path);
 
 
-    int fd;
-    int res;
-
-    (void) fi;
-    if (!std::filesystem::exists(minerva_entry_temp_path))
+    if (!std::filesystem::exists(minerva_entry_path))
     {
-        decode(path);
+        reutnr -errno;
     }
 
-    fd = fi->fh;
+    // Load the placeholder
+    auto raw_placeholder = tartarus::readers::vector_disk_reader(minerva_entry_path);
 
-    if (fd == -1)
+    std::vector<std::vector<uint8_t>> fingerprints;
+    std::vector<std::pair<uint64_t, std::vector<uint8_t>>> pairs;
+    nlohmann::json coding_config;
+    size_t file_size;
+
+    minerva::serializer::convert_store_structure(raw_placeholder, fingerprints, pairs, coding_config, file_size);
+    raw_placeholder.clear(); // Clear the memory
+
+    size_t chunk_size = (coder->configuration())["n"].get<size_t>();
+
+    off_t chunk_offset;
+
+    if (offset == 0)
     {
-        return -errno;
+        chunk_offset = 0;
+    }
+    else
+    {
+        chunk_offset (offset / chunk_size); // Test that it does ceil
     }
 
-    res = pread(fd, buf, size, offset);
+    // Number of chunk to read
+    size_t num_chunks = size % chunk_size;
 
-    if (res == -1)
+    // If there is a remainder we have to account for this
+    if (size % chunk_size != 0)
     {
-        res = -errno;
+        num_chunks = num_chunks + 1;
     }
 
-    return res;
+    std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
+
+    // Identify what basis we should load 
+    for (size_t i = chunk_off; i < num_chunks; ++i)
+    {
+        auto fingerprint = fingerprints.at(pairs.at(i).first);
+        if (bases_to_read.find(fingerprint) == bases_to_read.end())
+        {
+            std::vector<uint8_t> basis;
+            bases_to_read[fingerprint] = basis;
+        }
+    }
+
+    registry.load_bases(bases_to_read);
+
+    std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
+    size_t j = 0;
+    for (size_t i = chunk_off; i < num_chunks; ++i)
+    {
+        auto basis = bases_to_read[fingerprints.at(pairs.at(i).first)];
+        auto pair = std::make_pair(basis, pairs.at(i).second);
+        coded_pairs.at(j) = pair;
+        j = j + 1;
+    }
+    auto raw = coder->decode(coded_pairs);
+
+    std::memcpy(buf, raw.data(), size);
+    
+
+    return 0
+    
+    
+
+
+
+
+    // std::string minerva_entry_path = get_permanent_path(path);
+    // std::string filename = std::filesystem::path(path).filename().string();
+
+    // std::string minerva_entry_temp_path = get_temporary_path(path);
+
+
+    // int fd;
+    // int res;
+
+    // (void) fi;
+    // if (!std::filesystem::exists(minerva_entry_temp_path))
+    // {
+    //     decode(path);
+    // }
+
+    // fd = fi->fh;
+
+    // if (fd == -1)
+    // {
+    //     return -errno;
+    // }
+
+    // res = pread(fd, buf, size, offset);
+
+    // if (res == -1)
+    // {
+    //     res = -errno;
+    // }
+
+    // return res;
 }
 
 
@@ -449,38 +526,6 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 {
     (void) fi;
     (void) offset;
-
-    // std::string minerva_entry_temp_path = get_temporary_path(path);
-    // std::string minerva_entry_path = get_permanent_path(path);
-    
-    // //Check if the file is currently decoded in temp directory
-    // if (!std::filesystem::exists(minerva_entry_temp_path))
-    // {
-    //     //Check if the file exists in permanent storage
-    //     if (!std::filesystem::exists(minerva_entry_path))
-    //     {
-    //         std::cerr << "minerva_write(" << path << "): Cannot find entry (" << minerva_entry_path << ")" << std::endl;
-    //         return -ENOENT;
-    //     }
-    //     //Decode from permanent storage into temp directory
-    //     //TODO refactor in its own function as it might be reused in the read function
-    //     decode(path);
-    // }
-
-//    int fd = fi->fh;
-    // If we are unable to open a file we return an error
-    // if (fd == -1)
-    // {
-    //     std::cerr << "minerva_write(" << path << "): Cannot open temp entry (" << minerva_entry_temp_path  << ")" << std::endl;
-    //     return -errno;
-    // }
-
-    // Right now we just make a pars throgh of data
-    // int res = pwrite(fd, buf, size, offset);
-    // if (res == -1)
-    // {
-    //     res = -errno;
-    // }
 
     std::string cpp_path(path);
 
