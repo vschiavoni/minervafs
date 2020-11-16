@@ -408,14 +408,14 @@ int minerva_open(const char* path, struct fuse_file_info* fi)
 int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
-
+    (void) fi;
     // Get the place holder file path
     std::string minerva_entry_path = get_permanent_path(path);
 
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
-        reutnr -errno;
+        return -errno;
     }
 
     // Load the placeholder
@@ -439,7 +439,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     }
     else
     {
-        chunk_offset (offset / chunk_size); // Test that it does ceil
+        chunk_offset = (offset / chunk_size); // Test that it does ceil
     }
 
     // Number of chunk to read
@@ -454,7 +454,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
 
     // Identify what basis we should load 
-    for (size_t i = chunk_off; i < num_chunks; ++i)
+    for (size_t i = chunk_offset; i < num_chunks; ++i)
     {
         auto fingerprint = fingerprints.at(pairs.at(i).first);
         if (bases_to_read.find(fingerprint) == bases_to_read.end())
@@ -468,7 +468,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
     size_t j = 0;
-    for (size_t i = chunk_off; i < num_chunks; ++i)
+    for (size_t i = chunk_offset; i < num_chunks; ++i)
     {
         auto basis = bases_to_read[fingerprints.at(pairs.at(i).first)];
         auto pair = std::make_pair(basis, pairs.at(i).second);
@@ -480,7 +480,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     std::memcpy(buf, raw.data(), size);
     
 
-    return 0
+    return 0;
     
     
 
