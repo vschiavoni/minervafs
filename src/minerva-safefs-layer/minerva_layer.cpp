@@ -527,6 +527,9 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     (void) fi;
     (void) offset;
 
+    std::cout << "SIZE: " << std::to_string(size) << std::endl;
+    std::cout << "OFFSET: " << std::to_string(offset) << std::endl;
+    
     std::string cpp_path(path);
 
     minerva::structures::file_structure file;
@@ -552,6 +555,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     else
     {
         data = std::vector<uint8_t>(size);
+        std::memcpy(data.data(), buf, size);
     }
 
     size_t chunk_size = (coder->configuration())["n"].get<size_t>();

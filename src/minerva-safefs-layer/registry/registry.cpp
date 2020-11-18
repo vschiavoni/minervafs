@@ -91,10 +91,12 @@ namespace minerva
                 
 
             }
+            std::cout << "compression on" << std::endl;            
             m_compression = true; 
         }
         else
         {
+            std::cout << "compression off" << std::endl;            
             m_compression = false; 
         }
         
@@ -161,6 +163,7 @@ namespace minerva
             auto basis = it->second;
             if (m_compression)
             {
+                std::cout << "ladidadi da" << std::endl;
                 m_compressor.compress(basis);
             }
 
