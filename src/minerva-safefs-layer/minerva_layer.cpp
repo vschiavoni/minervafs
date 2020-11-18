@@ -277,6 +277,7 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
         
     }
     stbuf->st_size = size;
+    stbuf->st_blocks = (blkcnt_t) ceil(((double) size) / 512);
 
     return res;
 }
