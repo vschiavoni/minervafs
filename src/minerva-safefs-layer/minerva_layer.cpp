@@ -607,7 +607,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     registry.store_bases(bases_to_store);
 
     files[origin_file_path] = file;
-    return data.size();    
+    return size;//data.size();    
     
 }
 
