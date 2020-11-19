@@ -114,12 +114,13 @@ namespace minerva
     {
         if (m_versioning)
         {
+            // TODO check version path
             m_version.store_version(path, data);
         }
         else
         {
 //            tartarus::writers::vector_disk_writer(m_fileout_path + "/" + path, data, true);
-            tartarus::writers::vector_disk_writer(m_fileout_path + "/" + path, data);
+            tartarus::writers::vector_disk_writer(path, data);
         }
         
     }

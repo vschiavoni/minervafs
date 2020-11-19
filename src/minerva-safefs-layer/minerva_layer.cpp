@@ -530,6 +530,10 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     
     std::string origin_file_path(path);
 
+    std::cout << "path: " << origin_file_path << std::endl;
+
+    
+
 
     /// Setting up file object
     minerva::structures::file_structure file;
@@ -539,12 +543,10 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
         file.file_size = 0;
         file.bd_pairs = std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>>();
         file.fingerprints = std::map<std::vector<uint8_t>, uint8_t>();
-        std::cout << "here 2";        
         files[origin_file_path] = file;
     }
     else
     {
-        std::cout << "here 1";
         file = files[origin_file_path];
     }
 
@@ -567,7 +569,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
         data = std::vector<uint8_t>(size);
         std::memcpy(data.data(), buf, size);
     }
-    
+
     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
 
     size_t num_chunks = data.size() / chunk_size;
@@ -578,11 +580,10 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
         size_t remainder_size = data.size() - (num_chunks * chunk_size);
         auto remainder = std::vector<uint8_t>(remainder_size);
         std::memcpy(remainder.data(), data.data() + data.size() - remainder_size, remainder_size);
-        file_remainder.at(origin_file_path) = remainder;
+        file_remainder[origin_file_path] = remainder;
         data.resize(data.size() - remainder_size);
     }
 
-    std::cout << "I AM HERE" << std::endl;
     auto pairs = coder->encode(data);
 
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
@@ -606,9 +607,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 
     registry.store_bases(bases_to_store);
 
-    std::cout << "here 3" << std::endl;    
     files[origin_file_path] = file;
-    std::cout << "exit write" << std::endl;    
     return 1;    
     
 }
@@ -1325,6 +1324,7 @@ int encode(const char* path)
     auto cpp_path = std::string(path);
     auto file = files[cpp_path];
     auto permanent_path = get_permanent_path(path);
+    std::cout << permanent_path << std::endl;
 
     if (file_remainder.find(cpp_path) != file_remainder.end())
     {
@@ -1383,6 +1383,7 @@ int encode(const char* path)
     std::vector<uint8_t> out;
 
     minerva::serializer::convert_store_structure(fingerprints_index, pairs, coder->configuration(), file.file_size, out);
+    
     registry.write_file(permanent_path, out);
     files.erase(cpp_path);
 //    close(fd);
