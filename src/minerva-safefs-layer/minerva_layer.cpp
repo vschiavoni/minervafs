@@ -524,13 +524,12 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
 
-    std::cout << "enter write" << std::endl;
+    std::cout << "size" << size << std::endl;
+
     (void) fi;
     (void) offset;
     
     std::string origin_file_path(path);
-
-    std::cout << "path: " << origin_file_path << std::endl;
 
     
 
@@ -608,7 +607,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     registry.store_bases(bases_to_store);
 
     files[origin_file_path] = file;
-    return 1;    
+    return data.size();    
     
 }
 
