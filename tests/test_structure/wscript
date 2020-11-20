@@ -1,0 +1,6 @@
+def build(bld):
+    bld(features = 'cxx cxxprogram',
+        target = 'test_structure',
+        source = 'test_structure.cpp',
+        use = ['minerva-safefs-layer-includes', 'minerva-safefs-layer', 'gtest']
+    )

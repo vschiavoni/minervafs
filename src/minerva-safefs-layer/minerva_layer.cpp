@@ -408,10 +408,13 @@ int minerva_open(const char* path, struct fuse_file_info* fi)
 int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
+
+    std::cout << "ENTERED READ" << std::endl;
     (void) fi;
     // Get the place holder file path
     std::string minerva_entry_path = get_permanent_path(path);
 
+    std::cout << "PATH: " << minerva_entry_path << std::endl;
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
@@ -427,6 +430,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     size_t file_size;
 
     minerva::serializer::convert_store_structure(raw_placeholder, fingerprints, pairs, coding_config, file_size);
+
     raw_placeholder.clear(); // Clear the memory
 
     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
@@ -443,7 +447,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     }
 
     // Number of chunk to read
-    size_t num_chunks = size % chunk_size;
+    size_t num_chunks = size / chunk_size;
 
     // If there is a remainder we have to account for this
     if (size % chunk_size != 0)
@@ -451,6 +455,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         num_chunks = num_chunks + 1;
     }
 
+    std::cout << "Num of chunks " << num_chunks << std::endl;
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
 
     // Identify what basis we should load 
@@ -466,6 +471,8 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     registry.load_bases(bases_to_read);
 
+
+
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
     size_t j = 0;
     for (size_t i = chunk_offset; i < num_chunks; ++i)
@@ -475,12 +482,21 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         coded_pairs.at(j) = pair;
         j = j + 1;
     }
+
+    std::cout << "num of pairs " << coded_pairs.size() << std::endl;
     auto raw = coder->decode(coded_pairs);
+    std::cout << "here" << std::endl; 
+    assert(raw.size() >= size);
 
-    std::memcpy(buf, raw.data(), size);
+    std::cout << "raw: " << raw.size() << std::endl;
+    std::cout << "size: " << size << std::endl;
+    std::cout << "here" << std::endl;                        
     
+    std::memcpy(buf, raw.data(), size);
 
-    return 0;
+    std::cout << "here 3" << std::endl;                    
+
+    return size;
     
     
 
