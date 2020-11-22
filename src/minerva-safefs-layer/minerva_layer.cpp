@@ -438,6 +438,11 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     off_t chunk_offset;
 
+    if (file_size <= (size_t) offset)
+    {
+        return 0;
+    }
+
     if (offset == 0)
     {
         chunk_offset = 0;
@@ -485,8 +490,10 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     }
 
     std::cout << "num of pairs " << coded_pairs.size() << std::endl;
+    //FIXME Calls to encode with pairs of size lower than block size can trigger a segmentation fault from Codes
     auto raw = coder->decode(coded_pairs);
     std::cout << "here" << std::endl; 
+    //FIXME the size returned can be lower than the size passed as a parameter
     assert(raw.size() >= size);
 
     std::cout << "raw: " << raw.size() << std::endl;
@@ -498,42 +505,6 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     std::cout << "here 3" << std::endl;                    
 
     return size;
-    
-    
-
-
-
-
-    // std::string minerva_entry_path = get_permanent_path(path);
-    // std::string filename = std::filesystem::path(path).filename().string();
-
-    // std::string minerva_entry_temp_path = get_temporary_path(path);
-
-
-    // int fd;
-    // int res;
-
-    // (void) fi;
-    // if (!std::filesystem::exists(minerva_entry_temp_path))
-    // {
-    //     decode(path);
-    // }
-
-    // fd = fi->fh;
-
-    // if (fd == -1)
-    // {
-    //     return -errno;
-    // }
-
-    // res = pread(fd, buf, size, offset);
-
-    // if (res == -1)
-    // {
-    //     res = -errno;
-    // }
-
-    // return res;
 }
 
 
