@@ -493,18 +493,28 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     //FIXME Calls to encode with pairs of size lower than block size can trigger a segmentation fault from Codes
     auto raw = coder->decode(coded_pairs);
     std::cout << "here" << std::endl; 
-    //FIXME the size returned can be lower than the size passed as a parameter
     assert(raw.size() >= size);
 
     std::cout << "raw: " << raw.size() << std::endl;
     std::cout << "size: " << size << std::endl;
     std::cout << "here" << std::endl;                        
     
-    std::memcpy(buf, raw.data(), size);
+    auto to_read = size;
+    if (raw.size() < to_read)
+    {
+       to_read = raw.size();
+    }
+    auto offset_in_first_chunk = offset % file_size;
+    if (offset_in_first_chunk > 0)
+    {
+        to_read -= offset_in_first_chunk;
+    }
+
+    std::memcpy(buf, raw.data() + offset_in_first_chunk, to_read);
 
     std::cout << "here 3" << std::endl;                    
 
-    return size;
+    return to_read;
 }
 
 
