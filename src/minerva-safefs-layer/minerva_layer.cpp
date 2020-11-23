@@ -479,13 +479,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         coded_pairs.at(j) = pair;
     }
 
-    /*
-    for (size_t i = 0; i < coded_pairs.size(); i++) {
-        auto &pair = coded_pairs[i];
-        std::cout<< "[read] base[" << chunk_offset + i  << "]  = " << pair.first.size() << " B\t" <<
-                    "deviation[" << chunk_offset + i << "] = " << pair.second.size() << " B\t" << std::endl;
-    }
-    */
+
     auto raw = coder->decode(coded_pairs);
     assert(raw.size() >= size);
 
@@ -494,14 +488,13 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     {
        to_read = raw.size();
     }
-    auto offset_in_first_chunk = offset % file_size;
+    auto offset_in_first_chunk = offset % chunk_size;
     if (offset_in_first_chunk > 0)
     {
         to_read -= offset_in_first_chunk;
     }
 
     std::memcpy(buf, raw.data() + offset_in_first_chunk, to_read);
-
 
     return to_read;
 }
