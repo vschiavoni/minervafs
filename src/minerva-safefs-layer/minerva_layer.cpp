@@ -453,22 +453,20 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         num_chunks = num_chunks + 1;
     }
 
+    // Identify what bases we should load
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
-    // Identify what basis we should load 
     for (size_t i = chunk_offset; i < (chunk_offset + num_chunks); ++i)
     {
         auto fingerprint = fingerprints.at(pairs.at(i).first);
         std::string fingerprint_str = to_hexadecimal(fingerprint);
         std::cout << "[read] Looking for fingerprint\t" << fingerprint_str << std::endl;
-        //FIXME if the fingerprint cannot be found what is the point in trying to load an empty one?
         if (bases_to_read.find(fingerprint) == bases_to_read.end())
         {
-            std::cout << "[read] Could not find base " << fingerprint_str << std::endl;
             std::vector<uint8_t> basis;
             bases_to_read[fingerprint] = basis;
         }
     }
-
+    // Load bases
     registry.load_bases(bases_to_read);
 
 
@@ -486,8 +484,8 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     //FIXME Calls to encode with pairs of size lower than block size can trigger a segmentation fault from Codes
     for (size_t i = 0; i < coded_pairs.size(); i++) {
         auto &pair = coded_pairs[i];
-        std::cout<< "[read] base[" << i << "]  = " << pair.first.size() << " B\t" <<
-                    "deviation[" << i << "] = " << pair.second.size() << " B\t" << std::endl;
+        std::cout<< "[read] base[" << chunk_offset + i  << "]  = " << pair.first.size() << " B\t" <<
+                    "deviation[" << chunk_offset + i << "] = " << pair.second.size() << " B\t" << std::endl;
     }
     auto raw = coder->decode(coded_pairs);
     assert(raw.size() >= size);
