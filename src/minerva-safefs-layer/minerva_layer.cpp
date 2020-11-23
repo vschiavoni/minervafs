@@ -213,13 +213,12 @@ void minerva_destroy(void *private_data)
 int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info *fi)
 {
     (void) fi;
-    int res = 0;
 
     // Check if the file is decoded in the temp directory
     std::string minerva_entry_temp_path = get_temporary_path(path);
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
-        res = lstat(minerva_entry_temp_path.c_str(), stbuf);
+        int res = lstat(minerva_entry_temp_path.c_str(), stbuf);
         if (res == -1)
         {
             return -errno;
@@ -274,12 +273,11 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
             next = next << (i * 8);
             size ^= next; 
         }
-        
     }
     stbuf->st_size = size;
     stbuf->st_blocks = (blkcnt_t) ceil(((double) size) / 512);
 
-    return res;
+    return 0;
 }
 
 int minerva_access(const char* path, int mask)
@@ -1385,6 +1383,16 @@ int encode(const char* path)
     files.erase(cpp_path);
 //    close(fd);
     //  sync();
+
+    // Delete the temporary file
+    std::string minerva_entry_temp_path = get_temporary_path(path);
+    if (std::filesystem::exists(minerva_entry_temp_path))
+    {
+        if (unlink(minerva_entry_temp_path.c_str()) == -1)
+        {
+            std::cerr << "Could not delete temporary file after encoding (" << minerva_entry_temp_path << ")" << std::endl;
+        }
+    }
 
     //std::filesystem::remove(entry_path);
     alog.info("Encoding completed");
