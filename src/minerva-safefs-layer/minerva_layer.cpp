@@ -434,40 +434,36 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
 
-    off_t chunk_offset;
-
     if (file_size <= (size_t) offset)
     {
         return 0;
     }
 
-    if (offset == 0)
-    {
-        chunk_offset = 0;
-    }
-    else
+    off_t chunk_offset = 0;
+    if (offset != 0)
     {
         chunk_offset = (offset / chunk_size); // Test that it does ceil
     }
 
     // Number of chunk to read
     size_t num_chunks = size / chunk_size;
-
     // If there is a remainder we have to account for this
-    if (size % chunk_size != 0)
+    if ((size % chunk_size) != 0)
     {
         num_chunks = num_chunks + 1;
     }
 
-    std::cout << "Num of chunks " << num_chunks << std::endl;
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
-
     // Identify what basis we should load 
-    for (size_t i = chunk_offset; i < num_chunks; ++i)
+    for (size_t i = chunk_offset; i < (chunk_offset + num_chunks); ++i)
     {
         auto fingerprint = fingerprints.at(pairs.at(i).first);
+        std::string fingerprint_str = to_hexadecimal(fingerprint);
+        std::cout << "[read] Looking for fingerprint\t" << fingerprint_str << std::endl;
+        //FIXME if the fingerprint cannot be found what is the point in trying to load an empty one?
         if (bases_to_read.find(fingerprint) == bases_to_read.end())
         {
+            std::cout << "[read] Could not find base " << fingerprint_str << std::endl;
             std::vector<uint8_t> basis;
             bases_to_read[fingerprint] = basis;
         }
@@ -479,7 +475,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
     size_t j = 0;
-    for (size_t i = chunk_offset; i < num_chunks; ++i)
+    for (size_t i = chunk_offset; i < (chunk_offset + num_chunks); ++i)
     {
         auto basis = bases_to_read[fingerprints.at(pairs.at(i).first)];
         auto pair = std::make_pair(basis, pairs.at(i).second);
@@ -487,16 +483,15 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         j = j + 1;
     }
 
-    std::cout << "num of pairs " << coded_pairs.size() << std::endl;
     //FIXME Calls to encode with pairs of size lower than block size can trigger a segmentation fault from Codes
+    for (size_t i = 0; i < coded_pairs.size(); i++) {
+        auto &pair = coded_pairs[i];
+        std::cout<< "[read] base[" << i << "]  = " << pair.first.size() << " B\t" <<
+                    "deviation[" << i << "] = " << pair.second.size() << " B\t" << std::endl;
+    }
     auto raw = coder->decode(coded_pairs);
-    std::cout << "here" << std::endl; 
     assert(raw.size() >= size);
 
-    std::cout << "raw: " << raw.size() << std::endl;
-    std::cout << "size: " << size << std::endl;
-    std::cout << "here" << std::endl;                        
-    
     auto to_read = size;
     if (raw.size() < to_read)
     {
@@ -510,7 +505,6 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
     std::memcpy(buf, raw.data() + offset_in_first_chunk, to_read);
 
-    std::cout << "here 3" << std::endl;                    
 
     return to_read;
 }
