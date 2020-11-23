@@ -408,12 +408,9 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
 
-    std::cout << "ENTERED READ" << std::endl;
     (void) fi;
     // Get the place holder file path
     std::string minerva_entry_path = get_permanent_path(path);
-
-    std::cout << "PATH: " << minerva_entry_path << std::endl;
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
@@ -459,7 +456,6 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     {
         auto fingerprint = fingerprints.at(pairs.at(i).first);
         std::string fingerprint_str = to_hexadecimal(fingerprint);
-        std::cout << "[read] Looking for fingerprint\t" << fingerprint_str << std::endl;
         if (bases_to_read.find(fingerprint) == bases_to_read.end())
         {
             std::vector<uint8_t> basis;
@@ -469,8 +465,7 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     // Load bases
     registry.load_bases(bases_to_read);
 
-
-
+    // Build the list of pairs to decode
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
     for (size_t i = chunk_offset, j = 0; i < (chunk_offset + num_chunks); ++i, ++j)
     {
@@ -478,11 +473,10 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
         auto pair = std::make_pair(basis, pairs.at(i).second);
         coded_pairs.at(j) = pair;
     }
-
-
+    // Decode the pairs
     auto raw = coder->decode(coded_pairs);
-    assert(raw.size() >= size);
 
+    // Adjust the boundaries of the data to read in the decoded chunks
     auto to_read = size;
     if (raw.size() < to_read)
     {
@@ -493,9 +487,10 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     {
         to_read -= offset_in_first_chunk;
     }
-
+    // Copy the data in the out buffer
     std::memcpy(buf, raw.data() + offset_in_first_chunk, to_read);
 
+    // Return the amount of bytes read in the function
     return to_read;
 }
 
