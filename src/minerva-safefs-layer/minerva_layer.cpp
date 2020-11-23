@@ -472,21 +472,20 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
 
 
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
-    size_t j = 0;
-    for (size_t i = chunk_offset; i < (chunk_offset + num_chunks); ++i)
+    for (size_t i = chunk_offset, j = 0; i < (chunk_offset + num_chunks); ++i, ++j)
     {
         auto basis = bases_to_read[fingerprints.at(pairs.at(i).first)];
         auto pair = std::make_pair(basis, pairs.at(i).second);
         coded_pairs.at(j) = pair;
-        j = j + 1;
     }
 
-    //FIXME Calls to encode with pairs of size lower than block size can trigger a segmentation fault from Codes
+    /*
     for (size_t i = 0; i < coded_pairs.size(); i++) {
         auto &pair = coded_pairs[i];
         std::cout<< "[read] base[" << chunk_offset + i  << "]  = " << pair.first.size() << " B\t" <<
                     "deviation[" << chunk_offset + i << "] = " << pair.second.size() << " B\t" << std::endl;
     }
+    */
     auto raw = coder->decode(coded_pairs);
     assert(raw.size() >= size);
 
