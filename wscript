@@ -78,4 +78,5 @@ def build(bld):
 
     # Build Test
     # bld.recurse('test/TEST_NAME')
+    bld.recurse('tests/test_structure')
 

@@ -40,7 +40,7 @@
 
 #include <nlohmann/json.hpp>
 
-
+#include <cassert>
 
 static std::string minervafs_root_folder = "~/.minervafs";
 static const std::string minervafs_basis_folder = "/.basis/";
@@ -213,13 +213,12 @@ void minerva_destroy(void *private_data)
 int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info *fi)
 {
     (void) fi;
-    int res = 0;
 
     // Check if the file is decoded in the temp directory
     std::string minerva_entry_temp_path = get_temporary_path(path);
     if (std::filesystem::exists(minerva_entry_temp_path))
     {
-        res = lstat(minerva_entry_temp_path.c_str(), stbuf);
+        int res = lstat(minerva_entry_temp_path.c_str(), stbuf);
         if (res == -1)
         {
             return -errno;
@@ -274,11 +273,11 @@ int minerva_getattr(const char* path, struct stat* stbuf, struct fuse_file_info 
             next = next << (i * 8);
             size ^= next; 
         }
-        
     }
     stbuf->st_size = size;
+    stbuf->st_blocks = (blkcnt_t) ceil(((double) size) / 512);
 
-    return res;
+    return 0;
 }
 
 int minerva_access(const char* path, int mask)
@@ -408,10 +407,10 @@ int minerva_open(const char* path, struct fuse_file_info* fi)
 int minerva_read(const char *path, char *buf, size_t size, off_t offset,
                         struct fuse_file_info *fi)
 {
+
     (void) fi;
     // Get the place holder file path
     std::string minerva_entry_path = get_permanent_path(path);
-
 
     if (!std::filesystem::exists(minerva_entry_path))
     {
@@ -427,131 +426,117 @@ int minerva_read(const char *path, char *buf, size_t size, off_t offset,
     size_t file_size;
 
     minerva::serializer::convert_store_structure(raw_placeholder, fingerprints, pairs, coding_config, file_size);
+
     raw_placeholder.clear(); // Clear the memory
 
     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
 
-    off_t chunk_offset;
-
-    if (offset == 0)
+    if (file_size <= (size_t) offset)
     {
-        chunk_offset = 0;
+        return 0;
     }
-    else
+
+    off_t chunk_offset = 0;
+    if (offset != 0)
     {
         chunk_offset = (offset / chunk_size); // Test that it does ceil
     }
 
     // Number of chunk to read
-    size_t num_chunks = size % chunk_size;
-
+    size_t num_chunks = size / chunk_size;
     // If there is a remainder we have to account for this
-    if (size % chunk_size != 0)
+    if ((size % chunk_size) != 0)
     {
         num_chunks = num_chunks + 1;
     }
 
+    // Identify what bases we should load
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_read;
-
-    // Identify what basis we should load 
-    for (size_t i = chunk_offset; i < num_chunks; ++i)
+    for (size_t i = chunk_offset; i < (chunk_offset + num_chunks); ++i)
     {
         auto fingerprint = fingerprints.at(pairs.at(i).first);
+        std::string fingerprint_str = to_hexadecimal(fingerprint);
         if (bases_to_read.find(fingerprint) == bases_to_read.end())
         {
             std::vector<uint8_t> basis;
             bases_to_read[fingerprint] = basis;
         }
     }
-
+    // Load bases
     registry.load_bases(bases_to_read);
 
+    // Build the list of pairs to decode
     std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>> coded_pairs(num_chunks);
-    size_t j = 0;
-    for (size_t i = chunk_offset; i < num_chunks; ++i)
+    for (size_t i = chunk_offset, j = 0; i < (chunk_offset + num_chunks); ++i, ++j)
     {
         auto basis = bases_to_read[fingerprints.at(pairs.at(i).first)];
         auto pair = std::make_pair(basis, pairs.at(i).second);
         coded_pairs.at(j) = pair;
-        j = j + 1;
     }
+    // Decode the pairs
     auto raw = coder->decode(coded_pairs);
 
-    std::memcpy(buf, raw.data(), size);
-    
+    // Adjust the boundaries of the data to read in the decoded chunks
+    auto to_read = size;
+    if (raw.size() < to_read)
+    {
+       to_read = raw.size();
+    }
+    auto offset_in_first_chunk = offset % chunk_size;
+    if (offset_in_first_chunk > 0)
+    {
+        to_read -= offset_in_first_chunk;
+    }
+    // Copy the data in the out buffer
+    std::memcpy(buf, raw.data() + offset_in_first_chunk, to_read);
 
-    return 0;
-    
-    
-
-
-
-
-    // std::string minerva_entry_path = get_permanent_path(path);
-    // std::string filename = std::filesystem::path(path).filename().string();
-
-    // std::string minerva_entry_temp_path = get_temporary_path(path);
-
-
-    // int fd;
-    // int res;
-
-    // (void) fi;
-    // if (!std::filesystem::exists(minerva_entry_temp_path))
-    // {
-    //     decode(path);
-    // }
-
-    // fd = fi->fh;
-
-    // if (fd == -1)
-    // {
-    //     return -errno;
-    // }
-
-    // res = pread(fd, buf, size, offset);
-
-    // if (res == -1)
-    // {
-    //     res = -errno;
-    // }
-
-    // return res;
+    // Return the amount of bytes read in the function
+    return to_read;
 }
 
 
-// TODO: Inject the usage of GDD
 int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
+
+    std::cout << "size" << size << std::endl;
+
     (void) fi;
     (void) offset;
-
-    std::cout << "SIZE: " << std::to_string(size) << std::endl;
-    std::cout << "OFFSET: " << std::to_string(offset) << std::endl;
     
-    std::string cpp_path(path);
+    std::string origin_file_path(path);
 
+    
+
+
+    /// Setting up file object
     minerva::structures::file_structure file;
     
-    if (files.find(cpp_path) == files.end())
+    if (files.find(origin_file_path) == files.end())
     {
         file.file_size = 0;
-        file.bd_pairs = std::vector<std::vector<uint8>>
+        file.bd_pairs = std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>>();
+        file.fingerprints = std::map<std::vector<uint8_t>, uint8_t>();
+        files[origin_file_path] = file;
     }
     else
     {
-        file = files[cpp_path];
+        file = files[origin_file_path];
     }
 
     file.file_size += size;
 
     std::vector<uint8_t> data;
-    if (file_remainder.find(cpp_path) != file_remainder.end())
+
+    // Check for previous data in remainder
+    if (file_remainder.find(origin_file_path) != file_remainder.end())
     {
-        data = std::vector<uint8_t>(size + file_remainder[cpp_path].size());
-        std::memcpy(data.data(), file_remainder[cpp_path].data(), file_remainder[cpp_path].size());
-        std::memcpy(data.data() + file_remainder[cpp_path].size(), buf, size);
+        std::vector<uint8_t> remainder = file_remainder.at(origin_file_path);
+        file_remainder.erase(origin_file_path);
+
+        data = std::vector<uint8_t>(remainder.size() + size);
+        std::memcpy(data.data(), remainder.data(), remainder.size());
+        std::memcpy(data.data() + remainder.size(), buf, size);
     }
     else
     {
@@ -563,44 +548,135 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 
     size_t num_chunks = data.size() / chunk_size;
 
-    size_t remainder;
-
-    if ((remainder = data.size() - (chunk_size * num_chunks)) != 0)
+    // Check if there is a new remainder
+    if (data.size() % chunk_size != 0)
     {
-        std::vector<uint8_t> remainder_data(remainder);
-        std::memcpy(remainder_data.data(), data.data() + chunk_size * num_chunks, remainder);
-        std::vector<uint8_t> chunks(chunk_size * num_chunks);
-        std::memcpy(chunks.data(), data.data(), chunk_size * num_chunks);
-        data = chunks;
-        file_remainder[cpp_path] = remainder_data;
+        size_t remainder_size = data.size() - (num_chunks * chunk_size);
+        auto remainder = std::vector<uint8_t>(remainder_size);
+        std::memcpy(remainder.data(), data.data() + data.size() - remainder_size, remainder_size);
+        file_remainder[origin_file_path] = remainder;
+        data.resize(data.size() - remainder_size);
     }
 
     auto pairs = coder->encode(data);
 
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
+
     for (const auto& pair : pairs)
     {
         std::vector<uint8_t> fingerprint;
         harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
-        if (file.fingerprints.find(fingerprint) == file.fingerprints.end())
+
+        // Check if basis is new here:
+        if (bases_to_store.find(fingerprint) == bases_to_store.end())
         {
             bases_to_store[fingerprint] = pair.first;
             file.fingerprints[fingerprint] = 1; 
         }
 
         auto bd_pair = std::make_pair(fingerprint, pair.second);
-        file.bd_pairs.push_back(bd_pair);
+        // Add the basis and deviation pair
+        file.bd_pairs.push_back(bd_pair);              
     }
 
     registry.store_bases(bases_to_store);
+
+    files[origin_file_path] = file;
+    return size;//data.size();    
     
-    files[cpp_path] = file;
-    return 1;
-    //return res;
 }
+
+// // TODO: Inject the usage of GDD
+// int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
+//                          struct fuse_file_info* fi)
+// {
+//     (void) fi;
+//     (void) offset;
+
+//     std::cout << "SIZE: " << std::to_string(size) << std::endl;
+//     std::cout << "OFFSET: " << std::to_string(offset) << std::endl;
+    
+//     std::string cpp_path(path);
+
+//     minerva::structures::file_structure file;
+    
+//     if (files.find(cpp_path) == files.end())
+//     {
+//         file.file_size = 0;
+//         file.bd_pairs = std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>>();
+//         file.fingerprints = std::map<std::vector<uint8_t>, uint8_t>();
+//     }
+//     else
+//     {
+//         file = files[cpp_path];
+//     }
+
+//     file.file_size += size;
+
+//     std::vector<uint8_t> data;
+//     if (file_remainder.find(cpp_path) != file_remainder.end())
+//     {
+//         data = std::vector<uint8_t>(size + file_remainder[cpp_path].size());
+//         std::memcpy(data.data(), file_remainder[cpp_path].data(), file_remainder[cpp_path].size());
+//         std::memcpy(data.data() + file_remainder[cpp_path].size(), buf, size);
+//         file_remainder.erase(cpp_path);
+//     }
+//     else
+//     {
+//         data = std::vector<uint8_t>(size);
+//         std::memcpy(data.data(), buf, size);
+//     }
+
+//     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
+
+//     size_t num_chunks = data.size() / chunk_size;
+
+//     size_t remainder;
+
+//     if ((remainder = data.size() - (chunk_size * num_chunks)) != 0)
+//     {
+//         std::vector<uint8_t> remainder_data(remainder);
+//         std::memcpy(remainder_data.data(), data.data() + chunk_size * num_chunks, remainder);
+//         std::vector<uint8_t> chunks(chunk_size * num_chunks);
+//         std::memcpy(chunks.data(), data.data(), chunk_size * num_chunks);
+//         data = chunks;
+//         file_remainder[cpp_path] = remainder_data;
+//     }
+
+//     auto pairs = coder->encode(data);
+
+//     std::cout << "Pairs size: " << pairs.size() << std::endl;
+
+//     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
+    
+//     for (const auto& pair : pairs)
+//     {
+//         std::vector<uint8_t> fingerprint;
+//         harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
+//         if (file.fingerprints.find(fingerprint) == file.fingerprints.end())
+//         {
+//             bases_to_store[fingerprint] = pair.first;
+//             file.fingerprints[fingerprint] = 1; 
+//         }
+
+//         auto bd_pair = std::make_pair(fingerprint, pair.second);
+//         file.bd_pairs.push_back(bd_pair);        
+//     }
+
+//     std::cout << "FILE Pairs size: " << file.bd_pairs.size() << std::endl;
+//     assert(basis_to_store.size() <= pairs.size());
+    
+//     assert(file.bd_pairs.size() * chunk_size <= std::filesystem::file_size(cpp_path));
+//     registry.store_bases(bases_to_store);
+    
+//     files[cpp_path] = file;
+//     return 1;
+//     //return res;
+// }
 
 int minerva_release(const char* path, struct fuse_file_info *fi)
 {
+    std::cout << "I AM IN RELEASE!" << std::endl;
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::is_directory(minerva_entry_path))
@@ -1222,6 +1298,7 @@ int encode(const char* path)
     auto cpp_path = std::string(path);
     auto file = files[cpp_path];
     auto permanent_path = get_permanent_path(path);
+    std::cout << permanent_path << std::endl;
 
     if (file_remainder.find(cpp_path) != file_remainder.end())
     {
@@ -1280,10 +1357,21 @@ int encode(const char* path)
     std::vector<uint8_t> out;
 
     minerva::serializer::convert_store_structure(fingerprints_index, pairs, coder->configuration(), file.file_size, out);
+    
     registry.write_file(permanent_path, out);
     files.erase(cpp_path);
 //    close(fd);
     //  sync();
+
+    // Delete the temporary file
+    std::string minerva_entry_temp_path = get_temporary_path(path);
+    if (std::filesystem::exists(minerva_entry_temp_path))
+    {
+        if (unlink(minerva_entry_temp_path.c_str()) == -1)
+        {
+            std::cerr << "Could not delete temporary file after encoding (" << minerva_entry_temp_path << ")" << std::endl;
+        }
+    }
 
     //std::filesystem::remove(entry_path);
     alog.info("Encoding completed");

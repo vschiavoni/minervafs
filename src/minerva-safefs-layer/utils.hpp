@@ -23,3 +23,10 @@ struct minerva_hierarchy {
  * @return Path to the directory containing the binary invoking the function
  */
 std::string get_binary_directory();
+
+/**
+ * Returns a string representing a vector of bytes as a hexadecimal string
+ * @param data The vector to represent
+ * @returns A hexadecimal representation of the vector
+ */
+std::string to_hexadecimal(std::vector<uint8_t> data);
