@@ -537,6 +537,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     if (files.find(cpp_path) == files.end())
     {
         file.file_size = 0;
+        file.bd_pairs = std::vector<std::vector<uint8>>
     }
     else
     {
