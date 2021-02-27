@@ -76,7 +76,7 @@ install_ubuntu_2004() {
     # Update an install base dependencies
     apt-get update && \
     apt-get dist-upgrade --yes && \
-    apt-get install build-essential cmake curl git g++ libfuse3-dev libssl-dev lsb-release meson pkg-config python software-properties-common udev wget xz-utils zlib1g-dev --yes --quiet
+    apt-get install build-essential cmake curl fuse3 git g++ libfuse3-3 libfuse3-dev libssl-dev lsb-release meson pkg-config python software-properties-common udev wget xz-utils zlib1g-dev --yes --quiet
     
     # Install clang
     # Install specific version of clang
