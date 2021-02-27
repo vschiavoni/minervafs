@@ -16,7 +16,7 @@ install_ubuntu_1804 () {
     wget https://github.com/libfuse/libfuse/releases/download/fuse-3.9.1/fuse-3.9.1.tar.xz --quiet
     tar xaf /tmp/fuse-3.9.1.tar.xz
     cd fuse-3.9.1
-    mkdir build
+    mkdir -p build
     cd build
     meson ..
     ninja && ninja install || exit
@@ -39,7 +39,7 @@ install_ubuntu_1804 () {
     fi
     cd /tmp/nlohmann-json || exit
     git checkout v3.6.1 --quiet
-    mkdir build
+    mkdir -p build
     cd build || exit
     cmake ..
     make
@@ -62,7 +62,7 @@ install_ubuntu_1804 () {
     fi
     cd /tmp/libcorrect || exit
     git pull --all --quiet
-    mkdir build &&\
+    mkdir -p build &&\
     cd build &&\
     cmake .. &&\
     make &&
@@ -93,25 +93,6 @@ install_ubuntu_2004() {
     
 
     # nlohmann-json
-    #if [ ! -d /tmp/nlohmann-json ]; then
-    #    git clone https://github.com/nlohmann/json /tmp/nlohmann-json --quiet
-    #fi
-    #cd /tmp/nlohmann-json || exit
-    #git checkout v3.6.1 --quiet
-    #mkdir build
-    #cd build || exit
-    #cmake ..
-    #make
-    #make install
-    #ldconfig
-    ## cryptopp
-    #if [ ! -d /tmp/cryptopp ]; then
-    #    git clone https://github.com/weidai11/cryptopp /tmp/cryptopp --quiet
-    #fi
-    #cd /tmp/cryptopp || exit
-    #git checkout CRYPTOPP_8_2_0 --quiet
-    #make
-    #make install
     apt-get install nlohmann-json3-dev
     ldconfig
 
@@ -121,7 +102,7 @@ install_ubuntu_2004() {
     fi
     cd /tmp/libcorrect || exit
     git pull --all --quiet
-    mkdir build &&\
+    mkdir -p build &&\
     cd build &&\
     cmake .. &&\
     make &&
