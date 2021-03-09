@@ -55,7 +55,42 @@ To enable mounting and umount for all use you need to enable `allow other users`
 
 ## Configure MinervaFS
 
-**TBW**
+To configure MinervaFS you will need a `minervafs.json`.
+The basic version of this file looks like this: 
+
+```json
+{
+    "root_folder": <PATH_TO_ROOT_OF_PERSISTENT_MFS>,
+    "code": {
+        <CODE_CONFIG>
+    }
+}
+```
+
+- `root_folder` is the path to were the persistent path of minervaFS should be place 
+- `code` is the configuration for the transformation configuration. 
+
+`code` can contain many options and varies depending on the transformation function.
+Basic configuration for hamming code with chunks of `4kB` looks like this 
+
+```json
+    "code": {
+        "m": 15,
+        "code_type": 1
+    }
+```
+
+Additionally minervaFS can be configured with compression capabilities by adding a `"compression": {<compression_config>}` to the configuration format. 
+For Gzip with compression level 9 the configuration would look like this 
+
+```json
+    "compression": {
+        "algorithm": 0,
+        "level": 9
+    }
+```
+
+Example configurations can be found in `./configs`
 
 ## Mount mienrvaFS 
 
@@ -66,6 +101,18 @@ The folder `./configs` contains some example configuration files.
 
 To mount minervaFS run `~/build/examples/minervafs-example/minervafs_example <MNT_POINT>`. 
 Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying filesystem. 
+
+# Docker 
+
+The system can be built using [Docker](https://www.docker.com/) by running the following command in the top directory.
+```bash
+docker build --tag minervafs .
+```
+Please note that in order to pull the dependencies, some of them private, you will need to provide the right ssh keys and configuration.
+To achieve this, create a `ssh` directory at the top level of this folder containing a `config` file as well as the public and private key they refer to.
+This directory will overwrite the `/root/.ssh` folder inside of the container and enable the build process to pull the dependencies.
+The keys must be generated without a key-phrase (a.k.a password) 
+
 
 # Run Experiments 
 
@@ -94,64 +141,3 @@ The configuration file follows this format:
 
 
 
-# OLD README
-# minerva-safefs-layer
-This repository contains a layer for the safeFS file system developed at neuchatel University
-
-# SafeFS 
-
-SafeFS is a software defined file system which is highly modular for reference see:  [github.com/safecloud-project/safefs](https://github.com/safecloud-project/safefs)
-
-# Dependencies
-
-* git
-* Clang 8+
-* [nlohmann's JSON](https://github.com/nlohmann/json) 
-* [libcorrect](https://github.com/quiet/libcorrect)
-* openssl
-* Python
-* FUSE 3.9
-
-A dependency install script is available in `scripts/install-dependencies.sh` for Ubuntu 18.04.
-
-# Build 
-
-## First build
-
-Update the submodules to build the layer.
-
-```bash
-git submodule init
-git submodule update
-```
-
-Ensure you have all the necessary dependencies to build by running:
-```bash
-python waf configure
-```
-
-We build both a shared and static version of this library, just build using the command:
-
-```bash 
-python waf build 
-```
-
-
-## Build after a dependency upgrade
-
-1. Delete the `build` and the `.waf*` directories
-2. Run `waf configure build`
-
-## Configuration 
-
-allow other users in `/etc/fuse.conf`
-
-## Docker
-
-The system can be built using [Docker](https://www.docker.com/) by running the following command in the top directory.
-```bash
-docker build --tag minervafs .
-```
-Please note that in order to pull the dependencies, some of them private, you will need to provide the right ssh keys and configuration.
-To achieve this, create a `ssh` directory at the top level of this folder containing a `config` file as well as the public and private key they refer to.
-This directory will overwrite the `/root/.ssh` folder inside of the container and enable the build process to pull the dependencies.
