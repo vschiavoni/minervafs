@@ -1,5 +1,5 @@
 {
-    "root_folder": "~/experiment_output/.minervafs",
+    "root_folder": "/run/media/tools/Data1/mfs/.minervafs",
     "code": {
         "m": 15,
         "n": 4096,
