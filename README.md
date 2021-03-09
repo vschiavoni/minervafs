@@ -105,13 +105,29 @@ Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying fil
 # Docker 
 
 The system can be built using [Docker](https://www.docker.com/) by running the following command in the top directory.
-```bash
-docker build --tag minervafs .
-```
+
 Please note that in order to pull the dependencies, some of them private, you will need to provide the right ssh keys and configuration.
 To achieve this, create a `ssh` directory at the top level of this folder containing a `config` file as well as the public and private key they refer to.
 This directory will overwrite the `/root/.ssh` folder inside of the container and enable the build process to pull the dependencies.
 The keys must be generated without a key-phrase (a.k.a password) 
+
+The `config` file contains 
+
+```bash
+host github.com
+    Hostname        github.com
+    User            git
+    IdentityFile    ~/.ssh/<PRIVATE_KEY>
+```
+
+Where `<PRIVATE_KEY>` is the private key you added to the `ssh` folder earlier. 
+
+Then to buil the docker image, run: 
+
+```bash
+docker build --tag minervafs .
+```
+
 
 
 # Run Experiments 
