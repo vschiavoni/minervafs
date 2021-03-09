@@ -1,3 +1,48 @@
+# MinervaFS 
+
+This repository contains the generalised deduplication FUSE based file system developed by researchers at Aarhus University Department of Electrical and Computer Engineering and Neuchatel University Department of Computer Science. 
+
+# Dependencies
+
+- Git 
+- Clang 8+ 
+- [nlohmann's JSON](https://github.com/nlohmann/json) 
+- [libcorrect](https://github.com/quiet/libcorrect)
+- openssl
+- Python
+- FUSE 3.9
+
+To install these dependencies run the install dependencies script locate in `scripts`. 
+
+- For Ubuntu run `sh scripts/install-dependencies.sh`
+- For Fedora run `sh scripts/install-fedora-dependencies.sh`
+
+# Build 
+
+For build system we use `waf` which is include in the project and it require python3+.
+
+## Configure - Before first build
+
+To setup external dependencies not include by the install dependencies script and generally setting up the project, we need to execute a configuration command. 
+
+
+```bash
+python waf configure
+```
+
+## Build 
+
+To build the project run
+
+```bash
+python waf build
+
+```
+
+
+
+
+
 # minerva-safefs-layer
 This repository contains a layer for the safeFS file system developed at neuchatel University
 
@@ -9,7 +54,6 @@ SafeFS is a software defined file system which is highly modular for reference s
 
 * git
 * Clang 8+
-* [crypto++](https://github.com/weidai11/cryptopp)
 * [nlohmann's JSON](https://github.com/nlohmann/json) 
 * [libcorrect](https://github.com/quiet/libcorrect)
 * openssl
