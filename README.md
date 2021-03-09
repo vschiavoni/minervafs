@@ -39,10 +39,62 @@ python waf build
 
 ```
 
+## Build after dependency upgrade
+
+If a dependency in `resolve.json` has been update. Run 
+
+```bash 
+python waf configure build
+```
+
+# Run MinervaFS
+
+## Configure FUSE 
+
+To enable mounting and umount for all use you need to enable `allow other users` in `/etc/fuse.conf`
+
+## Configure MinervaFS
+
+**TBW**
+
+## Mount mienrvaFS 
+
+The application is compiled into `./build/examples/minervafs-example/minervafs_example`
+
+A configuration file is need in the directory from where you call the mount and it must be called `minervafs.json`.
+The folder `./configs` contains some example configuration files. 
+
+To mount minervaFS run `~/build/examples/minervafs-example/minervafs_example <MNT_POINT>`. 
+Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying filesystem. 
+
+# Run Experiments 
+
+## Physical Storage Usage
+
+The script for this is located in `./experiment-scripts/python/run_physical_experiment.py`.
+The script takes a JSON configuration file as input. 
+
+The configuration file follows this format:
+
+```json
+{
+    "file_list": <PATH_TO_FILE_LIST_OF_FILE>,
+    "output_dir": <MNT_POINT>,
+    "minerva_dir": <MINERVA_FS_DIR>,
+    "interval": <INTERVAL>,
+    "result_file": <PATH_TO_RESULT_FILE>
+}
+```
+
+- `file_list` is a file contain a list of files to be stored in the minervaFS mount point. The file should be seperated by `\n`
+- `output_dir` is the mount point of minervaFS 
+- `minerva_dir` is the root folder configured in the `minervafs.json` file before mounting minervaFS
+- `interval` is the number of files that will be run before the `du` command will be execture 
+- `result_file` is the path to the result file in CSV format
 
 
 
-
+# OLD README
 # minerva-safefs-layer
 This repository contains a layer for the safeFS file system developed at neuchatel University
 
