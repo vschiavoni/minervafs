@@ -128,6 +128,8 @@ Then to build the docker image, run:
 docker build --tag minervafs .
 ```
 
+This builds a Ubuntu 18.04 image and builds minervaFS as part of the process with the minervaFS project being located in `/tmp/minerva-safefs-layer`. 
+
 To run the container 
 
 ```bash
