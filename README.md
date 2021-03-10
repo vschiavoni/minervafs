@@ -14,8 +14,8 @@ This repository contains the generalised deduplication FUSE based file system de
 
 To install these dependencies run the install dependencies script locate in `scripts`. 
 
-- For Ubuntu run `sh scripts/install-dependencies.sh`
-- For Fedora run `sh scripts/install-fedora-dependencies.sh`
+- For Ubuntu run `./scripts/install-dependencies.sh`
+- For Fedora run `./scripts/install-fedora-dependencies.sh`
 
 # Build 
 
@@ -122,12 +122,25 @@ host github.com
 
 Where `<PRIVATE_KEY>` is the private key you added to the `ssh` folder earlier. 
 
-Then to buil the docker image, run: 
+Then to build the docker image, run: 
 
 ```bash
 docker build --tag minervafs .
 ```
 
+To run the container 
+
+```bash
+docker run -it --privileged minervafs:latest
+```
+
+and if you want to add an external volume: 
+
+```bash
+docker run -it --privileged --volume <HOST_PATH>:<CLIENT_PATH> minervafs:latest
+```
+
+Where `<HOST_PATH>` is the path to the volume/directory on your host system and `<CLIENT_PATH>` is the path the volume will have in the container.
 
 
 # Run Experiments 
