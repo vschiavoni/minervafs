@@ -1096,12 +1096,21 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 // Helper functions
 static void load_config(std::string path)
 {
-    std::cout << "I AM HERE" << std::endl;
-    
     assert(std::filesystem::exists(path));
-    std::ifstream ifs(path, std::ifstream::in);
-    nlohmann::json configuration = nlohmann::json::parse(ifs);
-    minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
+
+    std::ifstream input(path);
+    nlohmann::json configuration;
+
+    // Loading configuration 
+    input >> configuration;
+
+    if (!configuration.contains("root_folder"))
+    {
+        // TODO: Throw error
+    }
+
+    minervafs_root_folder = configuration["root_folder"].get<std::string>(); 
+    
     if (minervafs_root_folder.at(0) == '~')
     {
         const char *home = getenv("HOME");
@@ -1113,28 +1122,28 @@ static void load_config(std::string path)
         minervafs_root_folder.replace(0, 1, home_directory);
     }
 
-    if (configuration.find("code") != configuration.end())
-    {
-        coding_config = configuration["code"].get<nlohmann::json>();
-        coder = new codewrapper::codewrapper(coding_config);
 
-    }
-    else
+    // TODO: change configuration key to transformation
+    if (!configuration.contains("code"))
     {
-        // TODO: Throw exception 
+        // TODO: throw excedption
     }
 
-    if (configuration.find("compression") != configuration.end())
+    coding_config = configuration["code"].get<nlohmann::json>();
+    coder = new codewrapper::codewrapper(coding_config); 
+
+
+    if (configuration.contains("compression"))
     {
         minverva_compression_config = configuration["compression"].get<nlohmann::json>();
         if (minverva_compression_config.find("basis_size") == minverva_compression_config.end())
         {
             minverva_compression_config["basis_size"] = coder->get_k(); 
         }
-        minverva_compression = true;
+        minverva_compression = true;        
     }
-
-    if (configuration.find("versioning") != configuration.end())
+    
+    if (configuration.contains("versioning"))
     {
         minerva_versioning_config = configuration["versioning"].get<nlohmann::json>();
         minverva_versioning = true;
