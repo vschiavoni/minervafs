@@ -674,7 +674,6 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 
 int minerva_release(const char* path, struct fuse_file_info *fi)
 {
-//    std::cout << "I AM IN RELEASE!" << std::endl;
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::is_directory(minerva_entry_path))
@@ -1095,12 +1094,12 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 
 // Helper functions
 static void load_config(std::string path)
-{
-    std::cout << "I AM HERE" << std::endl;
-    
+{    
     assert(std::filesystem::exists(path));
+
     std::ifstream ifs(path, std::ifstream::in);
     nlohmann::json configuration = nlohmann::json::parse(ifs);
+
     minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
     if (minervafs_root_folder.at(0) == '~')
     {
