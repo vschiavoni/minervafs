@@ -6,6 +6,8 @@ import json
 import sys
 import os
 
+import time 
+
 def writeCsv(file, row):
 
     with open(file, 'a') as csvFile:
@@ -37,7 +39,11 @@ def dedupZfs():
 
 def copy(input, output):
 
-    subprocess.call(['cp', input, output])
+    start = time.time()
+    subprocess.call(['cp', input, output], encoding="utf-8")
+    end = time.time()
+    result = end - start
+    return result
 
 def main(configFilePath):
 
@@ -82,9 +88,9 @@ def main(configFilePath):
     header = []
 
     if dedupRatio:
-        header = ['file', 'original', 'physical end', 'dedup ratio']
+        header = ['file', 'original', 'physical end', 'dedup ratio', 'time']
     else:
-        header = ['file', 'original', 'physical end']
+        header = ['file', 'original', 'physical end', 'time']
 
 
     writeCsv(resultFile, header)
@@ -100,7 +106,7 @@ def main(configFilePath):
         
         file = file
         originSize += os.path.getsize(file)
-        copy(file, outputDir)
+        delta = copy(file, outputDir)
 
         finalSize = 0
         recordedDedupRatio = 0
@@ -116,9 +122,9 @@ def main(configFilePath):
                     recordedDedupRatio = finalSize / float(originSize)
                 
         if dedupRatio:
-            writeCsv(resultFile, [i, originSize, finalSize, recordedDedupRatio])
+            writeCsv(resultFile, [i, originSize, finalSize, recordedDedupRatio, delta])
         else:
-            writeCsv(resultFile, [i, originSize, finalSize])
+            writeCsv(resultFile, [i, originSize, finalSize, delta])
         i = i + 1            
             
     print('Copied {!s} files'.format(i))

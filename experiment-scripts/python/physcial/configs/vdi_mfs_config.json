@@ -1,7 +1,8 @@
 {
-    "file_list": "./minerva-safefs-layer/file_lists/vdi_files.txt",
-    "output_dir": "./mfs_mnt",
-    "minerva_dir": "./experiment_output/.minervafs",
+    "file_list": "./file_list/vdi_files",
+    "output_dir": "./mnt",
+    "minerva_dir": "/run/media/tools/Data1/mfs",
     "interval": 100,
-    "result_file": "./minerva-safefes-layer/results/physical/vdi_mfs.csv"
+    "result_file": "./results/physical/yavin_vdi_local_mfs.csv"
 }
+

@@ -499,8 +499,6 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
                          struct fuse_file_info* fi)
 {
 
-    std::cout << "size" << size << std::endl;
-
     (void) fi;
     (void) offset;
     
@@ -676,7 +674,7 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 
 int minerva_release(const char* path, struct fuse_file_info *fi)
 {
-    std::cout << "I AM IN RELEASE!" << std::endl;
+//    std::cout << "I AM IN RELEASE!" << std::endl;
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::is_directory(minerva_entry_path))
