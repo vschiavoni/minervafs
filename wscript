@@ -7,7 +7,7 @@ import sys
 
 
 
-APPNAME = 'minerva-safefs-layer' #TODO: REPLACE
+APPNAME = 'minervafs' #TODO: REPLACE
 VERSION = '0.0.1' #TODO: REPLACE 
 
 cxx_compiler['linux'] = ['clang++']
@@ -40,43 +40,23 @@ def build(bld):
 
     if sys.platform == 'linux' or sys.platform == 'linux2':
         libs.append('stdc++fs')
-        
-    if sys.platform == 'darwin':
-        libs.append('c++fs')
-        
-    bld(name = 'minerva-safefs-layer-includes',
+    
+    bld(name = '{}-includes'.format(APPNAME),
         includes='./src',
         export_includes='./src')
 
-    bld.stlib(name = 'minerva-safefs-layer',
-        features = 'cxx cxxstlib',
-        target='minerva-safefs-layer',
+    bld.stlib(name = '{}'.format(APPNAME),
+        features = 'cxx cxxprogram',
+        target='{}'.format(APPNAME),
         includes='../src',
-        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
+        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'.format(APPNAME)),
         lib = libs, 
         use=['tartarus_includes', 'tartarus', 'codewrapper_includes', 'codewrapper',
              'harpocrates_includes', 'harpocrates',
-             'minerva_includes', 'minerva', 'minerva-safefs-layer-includes']
+             'minerva_includes', 'minerva', '{}-includes'.format(APPNAME)]
     )
-
     
-    # bld.shlib(name = 'minerva-safefs-layer-shared',                    
-    #     features = 'cxx',                                              
-    #     target='minerva-safefs-layer-shared',                                 
-    #     includes='../src',                                             
-    #     source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'),
-    #     lib = libs,               
-    #     link_flags=['-Wl', '--whole-archive'],
-    #     use=['tartarus_includes', 'tartarus_shared',
-    #          'codewrapper_includes', 'codewrapper_shared',
-    #          'harpocrates_includes', 'harpocrates',
-    #          'minerva_includes', 'minerva' 'minerva-safefs-layer-includes']                          
-    # )                                                                  
-    
-    # Build Examples
-    bld.recurse('examples/minervafs-example')
-
     # Build Test
     # bld.recurse('test/TEST_NAME')
-    bld.recurse('tests/test_structure')
+#    bld.recurse('tests/test_structure')
 
