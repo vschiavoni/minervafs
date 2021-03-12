@@ -1098,6 +1098,7 @@ static void load_config(std::string path)
 {
     assert(std::filesystem::exists(path));
 
+    std::cout << path << "\n";
     std::ifstream input(path);
     nlohmann::json configuration;
 
@@ -1156,7 +1157,9 @@ static void setup()
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    auto path_to_config = std::filesystem::path(get_binary_directory()).parent_path().parent_path().parent_path() / "minervafs.json";
+    auto path_to_config = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json";
+//    auto path_to_config 
+    std::cout << "p:\t" << path_to_config << "\n"; 
     load_config(path_to_config.string());
 
     alog = aloha::aloha();
