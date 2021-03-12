@@ -1097,8 +1097,14 @@ static void load_config(std::string path)
 {    
     assert(std::filesystem::exists(path));
 
-    std::ifstream ifs(path, std::ifstream::in);
-    nlohmann::json configuration = nlohmann::json::parse(ifs);
+    std::ifstream config_input(path);
+    nlohmann::json configuration;
+
+    config_input >> configuration; 
+    
+    
+    //    std::ifstream ifs(path, std::ifstream::in);
+    //nlohmann::json configuration = nlohmann::json::parse(ifs);
 
     minervafs_root_folder = configuration.value("root_folder", minervafs_root_folder);
     if (minervafs_root_folder.at(0) == '~')
