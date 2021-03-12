@@ -674,7 +674,6 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
 
 int minerva_release(const char* path, struct fuse_file_info *fi)
 {
-//    std::cout << "I AM IN RELEASE!" << std::endl;
     // Check if path points to directory
     std::string minerva_entry_path = get_permanent_path(path);
     if (std::filesystem::is_directory(minerva_entry_path))
@@ -1095,6 +1094,7 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 
 // Helper functions
 static void load_config(std::string path)
+
 {
     assert(std::filesystem::exists(path));
 
@@ -1111,6 +1111,7 @@ static void load_config(std::string path)
 
     minervafs_root_folder = configuration["root_folder"].get<std::string>(); 
     
+
     if (minervafs_root_folder.at(0) == '~')
     {
         const char *home = getenv("HOME");
