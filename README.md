@@ -67,7 +67,8 @@ The basic version of this file looks like this:
 }
 ```
 
-- `root_folder` is the path to were the persistent path of minervaFS should be place 
+- `root_folder` is the path to were the persistent path of minervaFS should be place. 
+The root folder should be an empty folder in your system. A none existing root folder will allow minervaFS to be mounted but not work. 
 - `code` is the configuration for the transformation configuration. 
 
 `code` can contain many options and varies depending on the transformation function.
@@ -96,8 +97,8 @@ Example configurations can be found in `./configs`
 
 The application is compiled into `./build/examples/minervafs-example/minervafs_example`
 
-A configuration file is need in the directory from where you call the mount and it must be called `minervafs.json`.
-The folder `./configs` contains some example configuration files. 
+**A configuration file is need in the directory from where you call the mount and it must be called `minervafs.json`.
+The folder `./configs` contains some example configuration files.** 
 
 To mount minervaFS run `~/build/examples/minervafs-example/minervafs_example <MNT_POINT>`. 
 Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying filesystem. 
