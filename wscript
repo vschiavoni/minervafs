@@ -49,7 +49,7 @@ def build(bld):
         features = 'cxx cxxprogram',
         target='{}'.format(APPNAME),
         includes='../src',
-        source=bld.path.ant_glob('src/{}/**/*.cpp'.format(APPNAME)),
+        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'.format(APPNAME)),
         lib = libs, 
         use=['tartarus_includes', 'tartarus', 'codewrapper_includes', 'codewrapper',
              'harpocrates_includes', 'harpocrates',
@@ -58,5 +58,5 @@ def build(bld):
     
     # Build Test
     # bld.recurse('test/TEST_NAME')
-    bld.recurse('tests/test_structure')
+#    bld.recurse('tests/test_structure')
 
