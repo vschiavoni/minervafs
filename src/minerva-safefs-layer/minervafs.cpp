@@ -2,7 +2,7 @@
 #define FUSE_USE_VERSION 39
 #endif
 
-#include <minerva-safefs-layer/minerva_layer.hpp>
+#include "minerva_layer.hpp"
 
 #include <fuse3/fuse.h>
 
