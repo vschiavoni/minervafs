@@ -95,12 +95,12 @@ Example configurations can be found in `./configs`
 
 ## Mount mienrvaFS 
 
-The application is compiled into `./build/examples/minervafs-example/minervafs_example`
+The application is compiled into `./build/minervafs`
 
 **A configuration file is need in the directory from where you call the mount and it must be called `minervafs.json`.
 The folder `./configs` contains some example configuration files.** 
 
-To mount minervaFS run `~/build/examples/minervafs-example/minervafs_example <MNT_POINT>`. 
+To mount minervaFS run `~/build/minervafs <MNT_POINT>`. 
 Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying filesystem. 
 
 # Docker 
