@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            std::cout << "a:" << std::filesystem::path(config_file_path).parent_path() <<"\n"; 
+            std::cout << "Mounting with log file: " << config_file_path << "\n";
         }
             
 
@@ -83,21 +83,14 @@ int main(int argc, char* argv[])
             if (args[index] == "-cfg")
             {
                 cfg_index = index;
-                std::cout << "cfg: " << cfg_index << "\n";
-            } else if (index != cfg_index && index != (cfg_index + 1))
+            }
+            else if (index != cfg_index && index != (cfg_index + 1))
             {
                 new_argv[new_args_index] = argv[index];
                 new_args_index = new_args_index + 1;
                 std::cout << new_args_index << "\n\n";
             } 
         }
-
-        std::cout << new_argc << "\n";
-        for (int i = 0; i < new_argc; i++)
-        {
-            std::cout << std::string(new_argv[i]) << "\n";
-        }
-
         return fuse_main(new_argc, new_argv, &minerva_operations, NULL);        
     }
     else
