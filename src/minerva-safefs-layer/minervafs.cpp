@@ -19,9 +19,6 @@ static struct fuse_operations minerva_operations;
 
 int main(int argc, char* argv[])
 {
-
-    struct fuse_args args = FUSE_ARGS_INIT(argc, argv); 
-
     set_file_format(MSGPACK);
     minerva_operations.init = minerva_init;
     minerva_operations.destroy = minerva_destroy;
