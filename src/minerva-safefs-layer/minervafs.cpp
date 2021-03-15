@@ -19,7 +19,7 @@ static struct fuse_operations minerva_operations;
 int main(int argc, char* argv[])
 {
 
-    for (size_t i = 0; i < static_cast<int>(argc); ++i)
+    for (size_t i = 0; i < static_cast<size_t>(argc); ++i)
     {
         std::cout << argv[i] << "\n"; 
     }
