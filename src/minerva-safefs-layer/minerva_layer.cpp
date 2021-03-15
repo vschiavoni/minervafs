@@ -81,12 +81,6 @@ std::map<std::string, std::vector<uint8_t>> file_remainder;
 // Helper functions
 
 /**
- * Sets the path to the configuration file explicitly
- * @parm path to the JSON configuration file 
- */
-static void set_config_path(const std::string path);
-
-/**
  * Loads some of the configuration from the settings
  * @param path Path to the json configuration file
  */
