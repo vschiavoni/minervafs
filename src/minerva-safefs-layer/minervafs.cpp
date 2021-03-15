@@ -87,6 +87,7 @@ int main(int argc, char* argv[])
             } 
         }
 
+        std::cout <<"\na\n"; 
         for (size_t i = 0; i < new_args_index; ++i)
         {
             std::cout << new_argv[i] << "\n"; 
