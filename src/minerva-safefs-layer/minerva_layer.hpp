@@ -27,7 +27,7 @@ struct minerva_dirp
  * Sets the path to the configuration file explicitly
  * @parm path to the JSON configuration file 
  */
-static void set_config_path(const std::string path);
+void set_config_path(const std::string path);
 
 void* minerva_init(struct fuse_conn_info *conn, struct fuse_config *cfg);
 

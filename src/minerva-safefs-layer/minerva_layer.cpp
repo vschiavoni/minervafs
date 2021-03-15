@@ -1012,7 +1012,7 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 
 // Helper functions
 
-static void set_config_path(const std::string path);
+void set_config_path(const std::string path);
 {
     minerva_config_path = path; 
 }
@@ -1082,7 +1082,7 @@ static void setup()
 
     if (minerva_config_path.size() == 0)
     {
-        minerva_config_path = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json";
+        minerva_config_path = (std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json").string();
     }
     
 
