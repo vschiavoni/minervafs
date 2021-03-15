@@ -18,6 +18,11 @@ static struct fuse_operations minerva_operations;
 
 int main(int argc, char* argv[])
 {
+
+    for (size_t i = 0; i < static_cast<int>(argc); ++i)
+    {
+        std::cout << argv[i] << "\n"; 
+    }
     set_file_format(MSGPACK);
     minerva_operations.init = minerva_init;
     minerva_operations.destroy = minerva_destroy;
