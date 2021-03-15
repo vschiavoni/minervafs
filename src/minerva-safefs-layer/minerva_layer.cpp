@@ -50,7 +50,7 @@ static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 
-static const std::string minerva_config_path = ""; 
+static std::string minerva_config_path = ""; 
 
 static bool minverva_versioning = false;
 static bool minverva_compression = false;
