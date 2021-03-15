@@ -1012,7 +1012,7 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 
 // Helper functions
 
-void set_config_path(const std::string path)
+void set_config_path(std::string path)
 {
     minerva_config_path = path; 
 }
