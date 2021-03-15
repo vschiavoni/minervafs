@@ -54,14 +54,11 @@ int main(int argc, char* argv[])
         std::cout << elm << "\n"; 
     }
 
-    std::cout << "\n\n";
-
     auto arg_itr = std::find(std::begin(args), std::end(args), "-cfg");
 
     if (arg_itr != std::end(args) && (arg_itr + 1) != std::end(args))
     {
         auto config_file_path = *(arg_itr + 1);
-        std::cout << "config: " <<  config_file_path << "\n";
 
         if (!std::filesystem::exists(config_file_path))
         {
@@ -88,6 +85,11 @@ int main(int argc, char* argv[])
                 new_args_index = new_args_index + 1;
                 std::cout << new_args_index << "\n\n";
             } 
+        }
+
+        for (size_t i = 0; i < new_args_index; ++i)
+        {
+            std::cout << new_argc[i] << "\n"; 
         }
         return fuse_main(new_argc, new_argv, &minerva_operations, NULL);        
     }
