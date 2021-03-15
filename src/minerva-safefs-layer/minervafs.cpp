@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
         std::string config_file_path = std::string(argv[cfg_index + 1]);
 
-        if (!std::fileystem::exists(config_file_path))
+        if (!std::filesystem::exists(config_file_path))
         {
             // TODO: report error of missing config file
             // and throw exception
