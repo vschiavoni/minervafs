@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
             // and throw exception
         }
 
-        set_config_path(path); 
+        set_config_path(config_file_path); 
 
         // remove --cfg and config file path
         if (cfg_index != (argc - 2))
