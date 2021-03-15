@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 
         for (size_t i = 0; i < new_args_index; ++i)
         {
-            std::cout << new_argc[i] << "\n"; 
+            std::cout << new_argv[i] << "\n"; 
         }
         return fuse_main(new_argc, new_argv, &minerva_operations, NULL);        
     }
