@@ -8,6 +8,7 @@
 
 #include <iostream> // Only for test
 #include <string>
+#include <cstring>
 #include <vector>
 #include <cstdint>
 #include <algorithm>
@@ -19,10 +20,8 @@ static struct fuse_operations minerva_operations;
 int main(int argc, char* argv[])
 {
 
-    for (size_t i = 0; i < static_cast<size_t>(argc); ++i)
-    {
-        std::cout << argv[i] << "\n"; 
-    }
+    struct fuse_args args = FUSE_ARGS_INIT(argc, argv); 
+
     set_file_format(MSGPACK);
     minerva_operations.init = minerva_init;
     minerva_operations.destroy = minerva_destroy;
@@ -46,61 +45,55 @@ int main(int argc, char* argv[])
     minerva_operations.unlink = minerva_unlink;
     minerva_operations.utimens = minerva_utimens;
     minerva_operations.listxattr = minerva_listxattr;
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << std::string(argv[i]) << "\n"
+    }
+    std::cout << "\n"; 
     
-    std::vector<std::string> args(argc);
-
-    for (size_t index = 0; index < static_cast<size_t>(argc); ++index)
+    int cfg_index = 0; 
+    for (int index = 0; index < argc; ++index)
     {
-        args[index] = (std::string(argv[index]));
-    }
-
-    for (const auto& elm : args)
-    {
-        std::cout << elm << "\n"; 
-    }
-
-    auto arg_itr = std::find(std::begin(args), std::end(args), "-cfg");
-
-    if (arg_itr != std::end(args) && (arg_itr + 1) != std::end(args))
-    {
-        auto config_file_path = *(arg_itr + 1);
-
-        if (!std::filesystem::exists(config_file_path))
+        if (0 == std::strcmp(argv[index], "--cfg"))
         {
-            std::cout << "Config file does not exists" << std::endl;
-            // TODO: Throw exception
+            cfg_index = index;
+            break; 
         }
-        
-        set_config_path(config_file_path); 
+    }
 
-        int new_argc = argc - 2; 
-        char* new_argv[new_argc]; 
-        
-        size_t cfg_index = 0;
-        size_t new_args_index = 0;
-        for (size_t index = 0; index < args.size(); ++index)
+    if (cfg_index != 0)
+    {
+        if (cfg_index == argc - 1)
         {
-            if (args[index] == "-cfg")
+            // TODO: report error the --cfg is the last option
+            // and throw exception             
+        }
+
+        std::string config_file_path = std::string(argv[cfg_index + 1]);
+
+        if (!std::fileystem::exists(config_file_path))
+        {
+            // TODO: report error of missing config file
+            // and throw exception
+        }
+
+        // remove --cfg and config file path
+        if (cfg_index != (argc - 2))
+        {
+            for (int index = cfg_index + 2; index < argc; ++index)
             {
-                cfg_index = index;
+                argv[index - 2] = argv[index]; 
             }
-            else if (index != cfg_index && index != (cfg_index + 1))
-            {
-                new_argv[new_args_index] = argv[index];
-                new_args_index = new_args_index + 1;
-                std::cout << new_args_index << "\n\n";
-            } 
         }
+        argc = argc - 2;
 
-        std::cout <<"\na\n"; 
-        for (size_t i = 0; i < new_args_index; ++i)
+        for (int i = 0; i < argc; ++i)
         {
-            std::cout << new_argv[i] << "\n"; 
-        }
-        return fuse_main(new_argc, new_argv, &minerva_operations, NULL);        
-    }
-    else
-    {
-        return fuse_main(argc, argv, &minerva_operations, NULL);
-    }
+            std::cout << std::string(argv[i]) << "\n"
+                }
+        std::cout << "\n";         
+    }    
+
+    return fuse_main(argc, argv, &minerva_operations, NULL);
 }
