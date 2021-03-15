@@ -1083,8 +1083,9 @@ static void setup()
     if (minerva_config_path.size() == 0)
     {
 
-        auto _path = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json"; 
-        minerva_config_path = _path.string();
+        auto _path = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json";
+        const std::string _spath = _path.string(); 
+        set_config_path(_spath); 
     }
     
 
