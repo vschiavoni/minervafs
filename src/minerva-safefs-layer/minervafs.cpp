@@ -6,13 +6,13 @@
 
 #include <fuse3/fuse.h>
 
-#include <iostream> // Only for test
 #include <string>
 #include <cstring>
 #include <vector>
 #include <cstdint>
 #include <algorithm>
 #include <filesystem>
+#include <stdexcept>
 
 
 static struct fuse_operations minerva_operations;
@@ -43,12 +43,6 @@ int main(int argc, char* argv[])
     minerva_operations.utimens = minerva_utimens;
     minerva_operations.listxattr = minerva_listxattr;
 
-    for (int i = 0; i < argc; ++i)
-    {
-        std::cout << std::string(argv[i]) << "\n";
-    }
-    std::cout << "\n"; 
-    
     int cfg_index = 0; 
     for (int index = 0; index < argc; ++index)
     {
@@ -63,16 +57,14 @@ int main(int argc, char* argv[])
     {
         if (cfg_index == argc - 1)
         {
-            // TODO: report error the --cfg is the last option
-            // and throw exception             
+            throw std::runtime_error("--cfg provided as last input"); 
         }
 
         std::string config_file_path = std::string(argv[cfg_index + 1]);
 
         if (!std::filesystem::exists(config_file_path))
         {
-            // TODO: report error of missing config file
-            // and throw exception
+            throw std::runtime_error("configuration file does not exist at that path"); 
         }
 
         set_config_path(config_file_path); 
@@ -86,12 +78,6 @@ int main(int argc, char* argv[])
             }
         }
         argc = argc - 2;
-
-        for (int i = 0; i < argc; ++i)
-        {
-            std::cout << std::string(argv[i]) << "\n";
-                }
-        std::cout << "\n";         
     }    
 
     return fuse_main(argc, argv, &minerva_operations, NULL);
