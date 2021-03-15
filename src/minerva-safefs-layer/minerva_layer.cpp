@@ -50,11 +50,14 @@ static const std::string minervafs_config = "/.minervafs_config";
 static const std::string minervafs_temp = "/.temp"; // For temporarly decode files
 static const std::vector<std::string> IGNORE = {".indexing", ".minervafs_config", ".temp"};
 
+static const std::string minerva_config_path = ""; 
+
 static bool minverva_versioning = false;
 static bool minverva_compression = false;
 static nlohmann::json minerva_versioning_config;
 static nlohmann::json minverva_compression_config;
-static nlohmann::json coding_config; 
+static nlohmann::json coding_config;
+static nlohmann::json log_config; 
 
 static minerva::registry registry; 
 static codewrapper::codewrapper* coder;
@@ -74,7 +77,15 @@ thread_local codewrapper::codewrapper* codecs[20]={NULL, NULL, NULL, NULL, NULL,
 std::map<std::string, minerva::structures::file_structure> files;
 std::map<std::string, std::vector<uint8_t>> file_remainder;
 
+
 // Helper functions
+
+/**
+ * Sets the path to the configuration file explicitly
+ * @parm path to the JSON configuration file 
+ */
+static void set_config_path(const std::string path);
+
 /**
  * Loads some of the configuration from the settings
  * @param path Path to the json configuration file
@@ -584,93 +595,6 @@ int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
     
 }
 
-// // TODO: Inject the usage of GDD
-// int minerva_write(const char* path, const char *buf, size_t size, off_t offset,
-//                          struct fuse_file_info* fi)
-// {
-//     (void) fi;
-//     (void) offset;
-
-//     std::cout << "SIZE: " << std::to_string(size) << std::endl;
-//     std::cout << "OFFSET: " << std::to_string(offset) << std::endl;
-    
-//     std::string cpp_path(path);
-
-//     minerva::structures::file_structure file;
-    
-//     if (files.find(cpp_path) == files.end())
-//     {
-//         file.file_size = 0;
-//         file.bd_pairs = std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t>>>();
-//         file.fingerprints = std::map<std::vector<uint8_t>, uint8_t>();
-//     }
-//     else
-//     {
-//         file = files[cpp_path];
-//     }
-
-//     file.file_size += size;
-
-//     std::vector<uint8_t> data;
-//     if (file_remainder.find(cpp_path) != file_remainder.end())
-//     {
-//         data = std::vector<uint8_t>(size + file_remainder[cpp_path].size());
-//         std::memcpy(data.data(), file_remainder[cpp_path].data(), file_remainder[cpp_path].size());
-//         std::memcpy(data.data() + file_remainder[cpp_path].size(), buf, size);
-//         file_remainder.erase(cpp_path);
-//     }
-//     else
-//     {
-//         data = std::vector<uint8_t>(size);
-//         std::memcpy(data.data(), buf, size);
-//     }
-
-//     size_t chunk_size = (coder->configuration())["n"].get<size_t>();
-
-//     size_t num_chunks = data.size() / chunk_size;
-
-//     size_t remainder;
-
-//     if ((remainder = data.size() - (chunk_size * num_chunks)) != 0)
-//     {
-//         std::vector<uint8_t> remainder_data(remainder);
-//         std::memcpy(remainder_data.data(), data.data() + chunk_size * num_chunks, remainder);
-//         std::vector<uint8_t> chunks(chunk_size * num_chunks);
-//         std::memcpy(chunks.data(), data.data(), chunk_size * num_chunks);
-//         data = chunks;
-//         file_remainder[cpp_path] = remainder_data;
-//     }
-
-//     auto pairs = coder->encode(data);
-
-//     std::cout << "Pairs size: " << pairs.size() << std::endl;
-
-//     std::map<std::vector<uint8_t>, std::vector<uint8_t>> bases_to_store;
-    
-//     for (const auto& pair : pairs)
-//     {
-//         std::vector<uint8_t> fingerprint;
-//         harpocrates::hashing::vectors::hash(pair.first, fingerprint, harpocrates::hashing::hash_type::SHA1);
-//         if (file.fingerprints.find(fingerprint) == file.fingerprints.end())
-//         {
-//             bases_to_store[fingerprint] = pair.first;
-//             file.fingerprints[fingerprint] = 1; 
-//         }
-
-//         auto bd_pair = std::make_pair(fingerprint, pair.second);
-//         file.bd_pairs.push_back(bd_pair);        
-//     }
-
-//     std::cout << "FILE Pairs size: " << file.bd_pairs.size() << std::endl;
-//     assert(basis_to_store.size() <= pairs.size());
-    
-//     assert(file.bd_pairs.size() * chunk_size <= std::filesystem::file_size(cpp_path));
-//     registry.store_bases(bases_to_store);
-    
-//     files[cpp_path] = file;
-//     return 1;
-//     //return res;
-// }
 
 int minerva_release(const char* path, struct fuse_file_info *fi)
 {
@@ -1093,12 +1017,17 @@ int minerva_listxattr(const char* path, char* list, size_t size)
 }
 
 // Helper functions
+
+static void set_config_path(const std::string path);
+{
+    minerva_config_path = path; 
+}
+
 static void load_config(std::string path)
 
 {
     assert(std::filesystem::exists(path));
 
-    std::cout << path << "\n";
     std::ifstream input(path);
     nlohmann::json configuration;
 
@@ -1157,12 +1086,16 @@ static void setup()
     const std::string MKDIR = "mkdir";
     const std::string TOUCH = "touch";
 
-    auto path_to_config = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json";
-//    auto path_to_config 
-    std::cout << "p:\t" << path_to_config << "\n"; 
-    load_config(path_to_config.string());
+    if (minerva_config_path.size() == 0)
+    {
+        minerva_config_path = std::filesystem::path(get_binary_directory()).parent_path() / "minervafs.json";
+    }
+    
+
+    load_config(minerva_config_path);
 
     alog = aloha::aloha();
+    
     std::string base_directory = minervafs_root_folder;
     std::string config_file_path = base_directory + minervafs_config;
     std::string temp_directory = base_directory + minervafs_temp;

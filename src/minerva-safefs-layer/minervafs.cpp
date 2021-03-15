@@ -65,13 +65,11 @@ int main(int argc, char* argv[])
 
         if (!std::filesystem::exists(config_file_path))
         {
-            std::cout << "Config file does not exists" << std::endl; 
+            std::cout << "Config file does not exists" << std::endl;
+            // TODO: Throw exception
         }
-        else
-        {
-            std::cout << "Mounting with log file: " << config_file_path << "\n";
-        }
-            
+        
+        set_config_path(config_file_path); 
 
         int new_argc = argc - 2; 
         char* new_argv[new_argc]; 
@@ -96,13 +94,5 @@ int main(int argc, char* argv[])
     else
     {
         return fuse_main(argc, argv, &minerva_operations, NULL);
-        // 
     }
-    
-
-    
-
-    std::cout << "a\n";
-
-
 }

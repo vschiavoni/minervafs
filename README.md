@@ -100,8 +100,13 @@ The application is compiled into `./build/minervafs`
 **A configuration file is need in the directory from where you call the mount and it must be called `minervafs.json`.
 The folder `./configs` contains some example configuration files.** 
 
-To mount minervaFS run `~/build/minervafs <MNT_POINT>`. 
-Where `<MNT_POINT>` is a folder or device configured with EXT4 as underlying filesystem. 
+There are two ways to mount minervaFS with or without a configuration file specified. 
+If a configuration file is not specified, minervaFS will use the one readily available in the minervarFS projects root folder. 
+To mount without a specified configuration file simply run; `<PATH_TO_MFS_ROOT_FOLDER>/build/minervafs <FUSE_OPTIONS> <MNT_POINT>`. 
+Where `<MNT_POINT>` is a folder or device configured with POSIX compliant file system and `<FUSE_OPTIONS>` are any options you want to parse to FUSE. 
+
+To mount with a specified configuration the command will look like this `<PATH_TO_MFS_ROOT_FOLDER>/build/minervafs -cfg <CONFIG_FILE_PATH> <FUSE_OPTIONS> <MNT_POINT>`. 
+Where `<CONFIG_FILE_PATH>` is the path on your system to the configuration file. 
 
 # Docker 
 
