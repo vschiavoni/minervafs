@@ -3,6 +3,8 @@
 #include <tartarus/writers.hpp>
 #include <tartarus/readers.hpp>
 
+#include <minerva-io/parallel_writer.hpp>
+
 #include <filesystem>
 
 #include <sstream>
@@ -142,39 +144,56 @@ namespace minerva
 
     void registry::store_bases(const std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis)
     {
-
+        
         std::map<std::vector<uint8_t>, std::vector<uint8_t>> to_store;
 
         for (auto it = fingerprint_basis.begin(); it != fingerprint_basis.end(); ++it)
         {
             if (!basis_exists(it->first))
             {
-                to_store[it->first] = it->second; 
+                auto basis = it->second;
+                if (m_compression)
+                {
+                    m_compressor.compress(basis); 
+                }
+                    
+                to_store[it->first] = basis; 
             }
         }
 
-        for (auto it = to_store.begin(); it != to_store.end(); ++it)
+        minerva::writer::parallel_threaded::write(to_store, m_index_path, m_major_length, m_minor_length);
+
+        if (m_in_memory)
         {
-            std::filesystem::path basis_path(get_basis_path(it->first));
-            if (!std::filesystem::exists(basis_path.parent_path()))
+            for (const auto& [fingerprint, basis] : to_store)
             {
-                std::filesystem::create_directories(basis_path.parent_path());
-            }
-            
-            auto basis = it->second;
-            if (m_compression)
-            {
-                std::cout << "ladidadi da" << std::endl;
-                m_compressor.compress(basis);
-            }
-
-//            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
-            tartarus::writers::vector_disk_writer(basis_path.string(), basis);
-            if (m_in_memory)
-            {
-                m_in_memory_registry[it->first] = 1; 
+                (void) basis;
+                m_in_memory_registry[fingerprint] = 1; 
             }
         }
+        
+
+//         for (auto it = to_store.begin(); it != to_store.end(); ++it)
+//         {
+//             std::filesystem::path basis_path(get_basis_path(it->first));
+//             if (!std::filesystem::exists(basis_path.parent_path()))
+//             {
+//                 std::filesystem::create_directories(basis_path.parent_path());
+//             }
+            
+//             auto basis = it->second;
+//             if (m_compression)
+//             {
+//                 m_compressor.compress(basis);
+//             }
+
+// //            tartarus::writers::vector_disk_writer(basis_path.string(), it->second, true);            
+//             tartarus::writers::vector_disk_writer(basis_path.string(), basis);
+//             if (m_in_memory)
+//             {
+//                 m_in_memory_registry[it->first] = 1; 
+//             }
+//         }
     }
 
     void registry::load_bases(std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis)

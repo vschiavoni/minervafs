@@ -49,7 +49,7 @@ def build(bld):
         features = 'cxx cxxprogram',
         target='{}'.format(APPNAME),
         includes='../src',
-        source=bld.path.ant_glob('src/minerva-safefs-layer/**/*.cpp'.format(APPNAME)),
+        source=bld.path.ant_glob('src/{}r/**/*.cpp'.format(APPNAME)),
         lib = libs, 
         use=['tartarus_includes', 'tartarus', 'codewrapper_includes', 'codewrapper',
              'harpocrates_includes', 'harpocrates',

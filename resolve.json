@@ -34,6 +34,13 @@
         "sources": ["github.com/AgileCloudLab/minerva.git"]
     },
     {
+        "name": "minerva-io",
+        "resolver": "git",
+        "method": "semver",
+        "major": 1,
+        "sources": ["github.com/AgileCloudLab/minerva-io.git"]
+    },
+    {
         "name": "harpocrates",
         "resolver": "git",
         "method": "semver",
