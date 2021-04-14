@@ -4,6 +4,7 @@
 #include <tartarus/readers.hpp>
 
 #include <minerva-io/parallel_writer.hpp>
+#include <minerva-io/parallel_reader.hpp>
 
 #include <filesystem>
 
@@ -198,16 +199,38 @@ namespace minerva
 
     void registry::load_bases(std::map<std::vector<uint8_t>, std::vector<uint8_t>>& fingerprint_basis)
     {
-        for (auto it = fingerprint_basis.begin(); it != fingerprint_basis.end(); ++it)
+
+        std::vector<std::vector<uint8_t>> fingerprints(fignerprint_basis.size());
+
+        size_t i = 0;  
+        for (const auto& [fingerprint, _basis] : fingerprint_basis)
         {
-            auto basis = tartarus::readers::vector_disk_reader(get_basis_path(it->first));
-            if (m_compression)
-            {
-                m_compressor.uncompress(basis);
-            }
-            
-            fingerprint_basis[it->first] = basis;
+            (void)_basis;
+            fingerprints.at(i) = fingerprint;
         }
+
+        fingerprint_basis = minerva::parallel::reader::read(fingerprints, m_index_path, m_major_length, m_minor_length);
+
+        if (m_compression)
+        {
+            for (auto& [fingerprint, basis] : fingerprint_basis)
+            {
+                m_compressor(basis);
+                fignerprint_basis[fingerprint] = basis; 
+            }
+        }
+        
+        
+        // for (auto it = fingerprint_basis.begin(); it != fingerprint_basis.end(); ++it)
+        // {
+        //     auto basis = tartarus::readers::vector_disk_reader(get_basis_path(it->first));
+        //     if (m_compression)
+        //     {
+        //         m_compressor.uncompress(basis);
+        //     }
+            
+        //     fingerprint_basis[it->first] = basis;
+        // }
     }
 
     void registry::delete_bases(std::vector<std::vector<uint8_t>>& fingerprints)
