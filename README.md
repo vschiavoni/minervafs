@@ -1,6 +1,6 @@
 # MinervaFS 
 
-This repository contains the generalised deduplication FUSE based file system developed by researchers at Aarhus University Department of Electrical and Computer Engineering and Neuchatel University Department of Computer Science. 
+This repository contains the generalised deduplication FUSE based file system.
 
 # License 
 
