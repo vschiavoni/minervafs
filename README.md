@@ -2,6 +2,10 @@
 
 This repository contains the generalised deduplication FUSE based file system developed by researchers at Aarhus University Department of Electrical and Computer Engineering and Neuchatel University Department of Computer Science. 
 
+# License 
+
+This project is open source under the MIT open source software license, see the LICENSE file for more information.  
+
 # Dependencies
 
 - Git 
